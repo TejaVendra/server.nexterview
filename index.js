@@ -1,9 +1,10 @@
 import express, { json } from 'express'
-import {Client} from 'pg'
+import dotenv from 'dotenv'
+import { Client } from 'pg'
 const app = express();
-
+dotenv.config()
 const client = new Client({
-    connectionString:"postgresql://neondb_owner:npg_koZhx0Ucfi9K@ep-odd-lab-aqczy8q6-pooler.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+    connectionString: process.env.CONNECTION_STRING,
     ssl:{
         rejectUnauthorized:false
     }
