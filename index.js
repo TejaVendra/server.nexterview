@@ -1,11 +1,10 @@
 import express, { json } from 'express'
 import dotenv from 'dotenv'
 import connectDB from './database/server.js';
-
-
-
+import helmet from 'helmet'
 
 const app = express();
+app.use(helmet());
 
 connectDB();
 
