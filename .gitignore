@@ -93,3 +93,8 @@ ehthumbs.db
 *.njsproj
 *.sln
 *.swp
+/generated/prisma
+
+/generated/prisma
+
+/generated/prisma
