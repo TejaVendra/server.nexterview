@@ -99,4 +99,4 @@ ehthumbs.db
 
 /generated/prisma
 
-config/serviceAccountKey.json
+config/firebase_admin_secret_key.json
