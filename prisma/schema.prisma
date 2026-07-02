@@ -14,7 +14,11 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
+  firebaseId String @unique
   email     String   @unique
   name      String?
+  provider  String
+  photoURL String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
