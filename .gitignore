@@ -98,3 +98,5 @@ ehthumbs.db
 /generated/prisma
 
 /generated/prisma
+
+config/serviceAccountKey.json
