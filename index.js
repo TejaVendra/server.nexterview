@@ -3,6 +3,9 @@ import dotenv from 'dotenv'
 import helmet from 'helmet'
 import connectDB from './database/server.js';
 import {prisma} from "./database/db.js";
+import userRouter from './routes/UserRouter.js'
+
+
 const app = express();
 app.use(helmet());
 
@@ -13,6 +16,8 @@ app.get('/', async (req, res) => {
   const users = await prisma.user.findMany();
   res.json(users);
 });
+
+app.get('/auth',userRouter)
 const PORT = process.env.PORT || 3000
 
 app.listen(PORT,() =>{
