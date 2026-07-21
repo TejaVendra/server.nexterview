@@ -1,5 +1,6 @@
 import admin from '../authentication/firebaseAdmin.js'
 import { prisma } from '../database/db.js';
+import { generateAccessToken, generateRefreshToken } from '../libs/genToken.js';
 
 const firebaseAuth = async(req,res) =>{
     const { idToken } = req.body;
@@ -28,6 +29,11 @@ const firebaseAuth = async(req,res) =>{
                 }
             })
         }
+
+        const accessToken = generateAccessToken(decoded.uid);
+        const refreshToken = generateRefreshToken(decoded.uid);
+
+        return 
 
         
 
