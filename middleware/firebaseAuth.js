@@ -5,6 +5,13 @@ import { generateAccessToken, generateRefreshToken } from '../libs/genToken.js';
 const firebaseAuth = async(req,res) =>{
     const { idToken } = req.body;
 
+    if(!idToken){
+        return res.status(400).json({
+            success:false,
+            message : "Id token is required",
+        })
+    } 
+
     try {
 
         const decoded = await admin.auth().verifyIdToken(idToken);
@@ -28,21 +35,39 @@ const firebaseAuth = async(req,res) =>{
                     photoURL : firebaseUser.photoURL,
                 }
             })
+        }else{
+            user  = await prisma.user.update({
+                where:{
+                    firebaseId : decoded.uid,
+                },
+                data:{
+                    name : firebaseUser.displayName,
+                    photoURL:firebaseUser.photoURL,
+                    isVerified : firebaseUser.emailVerified,
+                }
+            })
         }
 
-        const accessToken = generateAccessToken(decoded.uid);
-        const refreshToken = generateRefreshToken(decoded.uid);
 
-        return 
+        const accessToken = generateAccessToken(user.id);
+        const refreshToken = generateRefreshToken(user.uid);
 
-        
-
-
-
-
-        
+        return res.status(200).json({
+            success:true,
+            message:"Login Successful",
+            user,
+            accessToken,
+            refreshToken,
+        })
         
     } catch (error) {
+
+        console.error(error);
+
+        return res.status(401).json({
+            success:false,
+            message : error.message,
+        })
         
     }
 }
