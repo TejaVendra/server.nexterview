@@ -1,74 +1,63 @@
-import admin from '../authentication/firebaseAdmin.js'
+import admin from '../authentication/firebaseAdmin.js';
 import { prisma } from '../database/db.js';
 import { generateAccessToken, generateRefreshToken } from '../libs/genToken.js';
 
-const firebaseAuth = async(req,res) =>{
-    const { idToken } = req.body;
-
-    if(!idToken){
-        return res.status(400).json({
-            success:false,
-            message : "Id token is required",
-        })
-    } 
-
-    try {
-
-        const decoded = await admin.auth().verifyIdToken(idToken);
-
-        const firebaseUser = await admin.auth().getUser(decoded.uid);
-
-        let user = await prisma.user.findUnique({
-            where:{
-                firebaseId : decoded.uid
-            }
-        });
-
-        if(!user){
-            user = await prisma.user.create({
-                data:{
-                    firebaseId: decoded.uid,
-                    email : firebaseUser.email,
-                    name : firebaseUser.displayName,
-                    isVerified : firebaseUser.emailVerified,
-                    provider : firebaseUser.providerData[0]?.providerId,
-                    photoURL : firebaseUser.photoURL,
-                }
-            })
-        }else{
-            user  = await prisma.user.update({
-                where:{
-                    firebaseId : decoded.uid,
-                },
-                data:{
-                    name : firebaseUser.displayName,
-                    photoURL:firebaseUser.photoURL,
-                    isVerified : firebaseUser.emailVerified,
-                }
-            })
-        }
+export const firebaseAuth = async (req, res) => {
+  const { idToken } = req.body; // get the data from client where client sends the data in the body
 
 
-        const accessToken = generateAccessToken(user.id);
-        const refreshToken = generateRefreshToken(user.uid);
+  // if the token is not receieved , here 400 means bad request --> bad request from client side >>>>
+  if (!idToken) {
+    return res.status(400).json({
+      success: false,
+      message: "ID token is required",
+    });
+  }
 
-        return res.status(200).json({
-            success:true,
-            message:"Login Successful",
-            user,
-            accessToken,
-            refreshToken,
-        })
-        
-    } catch (error) {
+  try {
+    //  Verify token (Decoded payload , that has email, picture, name, etc.)
+    const decoded = await admin.auth().verifyIdToken(idToken);
 
-        console.error(error);
+    // Use Prisma `upsert` (1 DB call instead of 2) , or we can we use both create if not exist else update the user but it takes the 2 calls , thats why  we use the upsert 
+    const user = await prisma.user.upsert({
+      where: { firebaseId: decoded.uid },
+      update: {
+        name: decoded.name || null,
+        photoURL: decoded.picture || null,
+        isVerified: decoded.email_verified || false,
+      },
+      create: {
+        firebaseId: decoded.uid,
+        email: decoded.email,
+        name: decoded.name || null,
+        isVerified: decoded.email_verified || false,
+        provider: decoded.firebase?.sign_in_provider || 'firebase',
+        photoURL: decoded.picture || null,
+      },
+    });
 
-        return res.status(401).json({
-            success:false,
-            message : error.message,
-        })
-        
-    }
-}
+    // issusing the new access and refresh tokens when user logins . here we use the database id not firebase uid , we can also use the firebase uid or we can we both
+    // i just dont want to put the firebase uid in tokens 
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
 
+    // return the success response to client by 200(ok standard success response) . here we can also use 201 status code but we doing two methods either create or update so we just use 200
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      user,
+      accessToken,
+      refreshToken,
+    });
+
+  } catch (error) {
+    console.error("Error in Firebase Auth file :", error);
+
+    // Sanitized error message for client security
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired authentication token",
+    });
+  }
+};
