@@ -16,7 +16,7 @@ export const firebaseAuth = async (req, res) => {
 
   try {
     //  Verify token (Decoded payload , that has email, picture, name, etc.)
-    const decoded = await admin.auth().verifyIdToken(idToken);
+    const decoded = await admin.auth().verifyIdToken(idToken);  // tc : o(1)
 
     // Use Prisma `upsert` (1 DB call instead of 2) , or we can we use both create if not exist else update the user but it takes the 2 calls , thats why  we use the upsert 
     const user = await prisma.user.upsert({
@@ -34,12 +34,12 @@ export const firebaseAuth = async (req, res) => {
         provider: decoded.firebase?.sign_in_provider || 'firebase',
         photoURL: decoded.picture || null,
       },
-    });
+    }); // tc :- with index --> o(log(n)) , but consider 0(1) in pratical for read operation . and 0(1) for write operation
 
     // issusing the new access and refresh tokens when user logins . here we use the database id not firebase uid , we can also use the firebase uid or we can we both
     // i just dont want to put the firebase uid in tokens 
-    const accessToken = generateAccessToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
+    const accessToken = generateAccessToken(user.id); //o(1)
+    const refreshToken = generateRefreshToken(user.id); //0(1)
 
     // return the success response to client by 200(ok standard success response) . here we can also use 201 status code but we doing two methods either create or update so we just use 200
 
@@ -61,3 +61,9 @@ export const firebaseAuth = async (req, res) => {
     });
   }
 };
+
+
+// total time complexity for this code is --> appro. o(n);
+// total space complexity :- o(1)
+
+// so performance depends on here is : network latency , database operations time , 
