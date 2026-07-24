@@ -41,7 +41,7 @@ export const firebaseAuth = async (req, res) => {
     const accessToken = generateAccessToken(user.id); //o(1)
     const refreshToken = generateRefreshToken(user.id); //0(1)
 
-    // return the success response to client by 200(ok standard success response) . here we can also use 201 status code but we doing two methods either create or update so we just use 200
+    // return the success response to client by 200(ok is standard success response) . here we can also use 201 status code but we doing two methods either create or update so we just use 200
 
     return res.status(200).json({
       success: true,
