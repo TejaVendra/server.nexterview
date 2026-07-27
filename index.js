@@ -8,7 +8,7 @@ import userRouter from './routes/UserRouter.js'
 
 const app = express();
 app.use(helmet());
-
+app.use(express.json())
 connectDB();
 
 
@@ -17,7 +17,7 @@ app.get('/', async (req, res) => {
   res.json(users);
 });
 
-app.get('/auth',userRouter)
+app.use('/auth',userRouter);
 const PORT = process.env.PORT || 3000
 
 app.listen(PORT,() =>{

@@ -1,4 +1,4 @@
-import admin from '../authentication/firebaseAdmin.js';
+import { adminAuth } from '../authentication/firebaseAdmin.js';
 import { prisma } from '../database/db.js';
 import { generateAccessToken, generateRefreshToken } from '../libs/genToken.js';
 
@@ -16,7 +16,10 @@ export const firebaseAuth = async (req, res) => {
 
   try {
     //  Verify token (Decoded payload , that has email, picture, name, etc.)
-    const decoded = await admin.auth().verifyIdToken(idToken);  // tc : o(1)
+    const decoded = await adminAuth.verifyIdToken(idToken);  // tc : o(1)
+    console.log('====================================');
+    console.log(decoded);
+    console.log('====================================');
 
     // Use Prisma `upsert` (1 DB call instead of 2) , or we can we use both create if not exist else update the user but it takes the 2 calls , thats why  we use the upsert 
     const user = await prisma.user.upsert({
