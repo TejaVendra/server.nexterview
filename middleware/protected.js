@@ -14,9 +14,7 @@ export const protectedRoute = async(req,res,next) =>{
                 message : "No token provided",
             })
         }
-
-
-
+        
         const decoded = await jwt.verify(token,process.env.JWT_SECRET);
 
         const user  = await Prisma.user.findUnique({
