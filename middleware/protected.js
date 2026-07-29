@@ -14,14 +14,15 @@ export const protectedRoute = async(req,res,next) =>{
                 message : "No token provided",
             })
         }
+        // if the token is not provided and takes the time complexity of 0(1)
         
-        const decoded = await jwt.verify(token,process.env.JWT_SECRET);
+        const decoded = await jwt.verify(token,process.env.JWT_SECRET); // verify the token 
 
         const user  = await Prisma.user.findUnique({
             where:{
                 id : decoded.userId,
             }
-        });
+        }); // gets the data from database by 
 
         if(!user){return res.status(403).json({
             success : false,
