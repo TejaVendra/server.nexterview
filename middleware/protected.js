@@ -25,7 +25,7 @@ export const protectedRoute = async(req,res,next) =>{
         }); // gets the data from database by 
 
         if(!user){return res.status(403).json({
-            success : false,
+           success : false,
             message : "Unauthorized access"
         });
     }
