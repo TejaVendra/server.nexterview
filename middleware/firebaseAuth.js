@@ -17,6 +17,7 @@ export const firebaseAuth = async (req, res) => {
   try {
     // Verify token (Decoded payload , that has email, picture, name, etc.)
     const decoded = await adminAuth.verifyIdToken(idToken); // tc : o(1)
+    console.log(decoded);
 
     // Use Prisma `upsert` (1 DB call instead of 2) , or we can we use both create if not exist else update the user but it takes the 2 calls , thats why we use the upsert
     const user = await prisma.user.upsert({
@@ -42,9 +43,8 @@ export const firebaseAuth = async (req, res) => {
     await client.set(
       `user:${user.id}`,
       JSON.stringify(user),
-      {
-        EX: 60 * 60, // expires in 1 hour
-      }
+       "EX",
+       3600
     );
 
     // issuing the new access and refresh tokens when user logins.
@@ -60,9 +60,8 @@ export const firebaseAuth = async (req, res) => {
     await client.set(
       `refresh:${user.id}`,
       refreshToken,
-      {
-        EX: 7 * 24 * 60 * 60, // expires in 7 days
-      }
+      "EX",
+        60 * 60 * 24 * 7
     );
 
     // return the success response to client by 200(ok is standard success response).
