@@ -20,6 +20,106 @@ model User {
   provider  String
   photoURL String?
   isVerified Boolean @default(false)
+
+  resume Resume?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+
+model Resume{
+     id Int @id @default(autoincrement())
+     userId Int @unique
+     title String?
+     summary String?
+
+     phone String?
+     location String?
+     linkedin String?
+     github String?
+     portfolio String?
+
+     skills Skill[]
+     experiences Experience[]
+     educations Education[]
+     projects Project[]
+     certifications Certification[]
+
+     user User @relation(fields:[userId],references:[id])
+
+     createdAt DateTime @default(now())
+     updatedAt DateTime @updatedAt
+}
+
+model Skill{
+  id Int @id @default(autoincrement())
+  name String
+  resumeId Int
+
+  resume Resume @relation(fields:[resumeId],references:[id])
+
+}
+
+model Experience{
+  id Int @id @default(autoincrement())
+  resumeId Int
+
+  company String
+  position String
+  location String?
+  startDate DateTime
+  endDate DateTime?
+  description String?
+
+  resume Resume @relation(fields:[resumeId],references:[id])
+}
+
+model Education{
+  id Int @id @default(autoincrement())
+  resumeId Int
+
+  institution String
+  degree String
+  field String?
+  startDate DateTime?
+  endDate DateTime?
+  grade String?
+
+  resume Resume @relation(fields:[resumeId],references:[id])
+}
+
+model Project{
+  id Int @id @default(autoincrement())
+  resumeId    Int
+
+  name        String
+  description String?
+  githubUrl   String?
+  liveUrl     String?
+  technologies Technology[]
+
+  resume      Resume  @relation(fields: [resumeId], references: [id])
+}
+
+model Technology{
+   id Int @id @default(autoincrement())
+   projectId Int
+
+   name String?
+
+   project Project @relation(fields:[projectId],references:[id])
+}
+
+
+model Certification {
+  id          Int      @id @default(autoincrement())
+  resumeId    Int
+
+  name        String
+  issuer      String?
+  issueDate   DateTime?
+  credentialUrl String?
+
+  resume      Resume   @relation(fields: [resumeId], references: [id])
 }
