@@ -22,9 +22,11 @@ model User {
   isVerified Boolean @default(false)
 
   resume Resume?
+  mockInterviews MockInterview[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
 }
 
 
@@ -46,7 +48,7 @@ model Resume{
      projects Project[]
      certifications Certification[]
 
-     user User @relation(fields:[userId],references:[id])
+     user User @relation(fields:[userId],references:[id],onDelete:Cascade)
 
      createdAt DateTime @default(now())
      updatedAt DateTime @updatedAt
@@ -57,7 +59,7 @@ model Skill{
   name String
   resumeId Int
 
-  resume Resume @relation(fields:[resumeId],references:[id])
+  resume Resume @relation(fields:[resumeId],references:[id],onDelete:Cascade)
 
 }
 
@@ -72,7 +74,7 @@ model Experience{
   endDate DateTime?
   description String?
 
-  resume Resume @relation(fields:[resumeId],references:[id])
+  resume Resume @relation(fields:[resumeId],references:[id],onDelete:Cascade)
 }
 
 model Education{
@@ -86,7 +88,7 @@ model Education{
   endDate DateTime?
   grade String?
 
-  resume Resume @relation(fields:[resumeId],references:[id])
+  resume Resume @relation(fields:[resumeId],references:[id],onDelete:Cascade)
 }
 
 model Project{
@@ -99,7 +101,7 @@ model Project{
   liveUrl     String?
   technologies Technology[]
 
-  resume      Resume  @relation(fields: [resumeId], references: [id])
+  resume      Resume  @relation(fields: [resumeId], references: [id],onDelete:Cascade)
 }
 
 model Technology{
@@ -108,7 +110,7 @@ model Technology{
 
    name String?
 
-   project Project @relation(fields:[projectId],references:[id])
+   project Project @relation(fields:[projectId],references:[id],onDelete:Cascade)
 }
 
 
@@ -121,5 +123,57 @@ model Certification {
   issueDate   DateTime?
   credentialUrl String?
 
-  resume      Resume   @relation(fields: [resumeId], references: [id])
+  resume      Resume   @relation(fields: [resumeId], references: [id],onDelete:Cascade)
+}
+
+enum InterviewStatus {
+  CREATED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model MockInterview{
+    id Int @id @default(autoincrement())
+    userId Int 
+
+    role String
+    round   String
+    experience      String
+    duration        Int
+
+    status     InterviewStatus     @default(CREATED)
+
+    startedAt       DateTime?
+    completedAt     DateTime?
+
+    score           Float?
+    feedback        String?
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    user            User     @relation(fields: [userId], references: [id],onDelete:Cascade)
+
+    questions       MockQuestion[]
+
+
+}
+
+
+model MockQuestion{
+  id Int @id @default(autoincrement())
+  interviewId Int 
+
+  question       String
+  answer          String?
+
+  feedback        String?
+  score           Float?
+
+  order           Int
+
+  createdAt       DateTime @default(now())
+
+  interview       MockInterview @relation(fields: [interviewId], references: [id],onDelete: Cascade)
 }
