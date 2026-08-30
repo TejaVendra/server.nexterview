@@ -21,6 +21,7 @@ app.get('/', async (req, res) => {
 });
 
 app.use('/auth',userRouter);
+
 const PORT = process.env.PORT || 3000
 
 app.listen(PORT,() =>{

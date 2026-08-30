@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import { Prisma } from '../database/db.js'
+import { prisma } from '../database/db.js'
 
 
 export const protectedRoute = async(req,res,next) =>{
@@ -18,7 +18,7 @@ export const protectedRoute = async(req,res,next) =>{
         
         const decoded = await jwt.verify(token,process.env.JWT_SECRET); // verify the token 
 
-        const user  = await Prisma.user.findUnique({
+        const user  = await prisma.user.findUnique({
             where:{
                 id : decoded.userId,
             }
@@ -30,7 +30,7 @@ export const protectedRoute = async(req,res,next) =>{
         });
     }
 
-        res.user = user;
+        req.user = user;
 
         next();
 

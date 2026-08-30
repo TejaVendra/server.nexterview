@@ -21,7 +21,7 @@ export const firebaseAuth = async (req, res) => {
 
     // Use Prisma `upsert` (1 DB call instead of 2) , or we can we use both create if not exist else update the user but it takes the 2 calls , thats why we use the upsert
     const user = await prisma.user.upsert({
-      where: { firebaseId: decoded.uid },
+      where: { email: decoded.email },
       update: {
         name: decoded.name || null,
         photoURL: decoded.picture || null,
