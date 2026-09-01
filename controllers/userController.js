@@ -104,6 +104,35 @@ export const updateName = async (req, res) => {
   }
 };
 
+export const updateProfilePic = async (req,res) => {
+  try {
+
+    const { profilePic } = req.body;
+    const userId = req.user.id;
+
+    if(!profilePic || !profilePic.trim()){
+      return res.status(400).json({
+        success:false,
+        message:"Profile pic is required."
+      });
+    }
+
+    // handle image upload to the server
+
+    const user = await prisma.user.update({
+      where:{
+        id:userId,
+      },
+      data:{
+        
+      },
+    })
+    
+  } catch (error) {
+    
+  }
+}
+
 export const deleteUser = async (req, res) => {
   try {
     const userId = req.user.id;
