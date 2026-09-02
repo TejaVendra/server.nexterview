@@ -1,6 +1,6 @@
 import { prisma } from "../database/db.js";
 import client from "../redis/redisServer.js";
-
+import cloudinary from "../cloudinary/cloudinaryServer.js";
 
 export const userProfile = async ( req,res) =>{
     try {
@@ -104,31 +104,78 @@ export const updateName = async (req, res) => {
   }
 };
 
+export const getSignature = async(req,res) =>{
+  try {
+
+    const timestamp = Math.round(new Date().getTime()/1000);
+
+   const signature = cloudinary.utils.api_sign_request({
+     timestamp,
+     folder:"profile-pictures"
+   },
+  process.env.CLOUDINARY_API_SECRET);
+
+  return res.status(200).json({
+    success:true,
+    timestamp,
+    signature,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+   cloudName: process.env.CLOUDINARY_CLOUD_NAME
+  });
+    
+  } catch (error) {
+
+    console.error("Error in get signature file :",error);
+
+    return res.status(500).json({success:false,message:"Internal server issuse."})
+    
+  }
+}
+
 export const updateProfilePic = async (req,res) => {
   try {
 
-    const { profilePic } = req.body;
+    const { photoUrl , public_id } = req.body;
     const userId = req.user.id;
 
-    if(!profilePic || !profilePic.trim()){
+    if(!photoUrl || !photoUrl.trim() || !public_id || !public_id.trim()){
       return res.status(400).json({
         success:false,
         message:"Profile pic is required."
       });
     }
 
-    // handle image upload to the server
-
     const user = await prisma.user.update({
       where:{
         id:userId,
       },
       data:{
-        
+        photoURL,
+        public_id
       },
     })
+
+    if(!user){
+      return res.status(400).json({
+        success:false,
+        message:"Account is not found."
+      })
+    }
+
+    await client.del(`user:${user.email}`);
+
+    return res.status(200).json({success:true,
+       message:"Profile pic updated successfully."
+    })
+
     
   } catch (error) {
+
+    console.error("Error in update profile pic : ",error);
+    return res.status(500).json({
+      success:false,
+      message:"Internal Server Issue."
+    });
     
   }
 }

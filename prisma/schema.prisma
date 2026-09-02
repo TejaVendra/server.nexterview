@@ -19,6 +19,7 @@ model User {
   name      String?
   provider  String
   photoURL String?
+  public_id String?
   isVerified Boolean @default(false)
 
   resume Resume?
