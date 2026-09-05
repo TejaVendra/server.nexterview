@@ -1,7 +1,10 @@
 import { prisma } from "../database/db.js";
 import client from "../redis/redisServer.js";
 import cloudinary from "../cloudinary/cloudinaryServer.js";
+import jwt from 'jsonwebtoken'
+import { generateAccessToken } from "../libs/genToken.js";
 
+// profile page required API end points 
 export const userProfile = async ( req,res) =>{
     try {
 
@@ -213,3 +216,70 @@ export const deleteUser = async (req, res) => {
     });
   }
 };
+
+
+export const checkAuth = async(req,res) =>{
+  try {
+
+    return res.status(200).json({
+      success:true,
+      user:req.user,
+    });
+    
+  } catch (error) {
+
+    console.error("Error in check auth",error);
+
+    return res.status(500).json({success:false,message:"Internal server issuse."});
+    
+  }
+}
+
+
+export const getRefreshToken = async(req,res) =>{
+        try {
+
+          const { refreshToken } = req.body;
+
+          if(!refreshToken){
+            return res.status(400).json({
+              success:false,
+              message:"No token provided."
+            })
+          }
+
+          const decoded =  jwt.verify(refreshToken,process.env.JWT_SECRET);
+
+          const user = await prisma.user.findUnique({
+            where:{
+              id:decoded.userId
+            }
+          });
+
+          if(!user){
+            return res.status(404).json({
+              success:false,
+              message:"Unauthorized access or token invalid"
+            })
+          }
+
+          const accessToken =  generateAccessToken(user.id);
+          
+
+          return res.status(200).json({
+            success:true,
+            accessToken
+            
+          });
+          
+        } catch (error) {
+
+          console.error("Error in get refresh token: ",error);
+
+          return res.status(500).json({
+            success:false,
+            message:"Internal server issuse."
+          })
+          
+        }
+}
