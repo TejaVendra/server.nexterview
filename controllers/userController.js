@@ -6,6 +6,76 @@ import { generateAccessToken } from "../libs/genToken.js";
 import { adminAuth } from "../authentication/firebaseAdmin.js";
 
 //  API end points for user authentication
+export const userProfile = async ( req,res) =>{
+    try {
+
+      const  userId  = req.user.id;
+
+      if(!userId){
+          return res.status(403).json({
+            sucess:false,
+            message:"Unauthorized access."
+          })
+      }
+
+      const cacheKey = `user:${userId}`;
+
+      //check the redis wheather the user is present to not --> HIT
+
+      const cachedUser = await client.get(cacheKey);
+
+      if(cachedUser){
+         return res.status(200).json({
+            success : true,
+            user : JSON.parse(cachedUser)
+         });
+      }
+
+
+      // if user not found in redis we have fetch the user and store it in redis ans return --> MISS
+
+       const user = await prisma.user.findUnique({
+        where:{
+            id:userId,
+        },
+        select:{
+            id: true,
+            firebaseId: true,
+            email: true,
+            name: true,
+            photoURL: true,
+            isVerified: true,
+            provider: true,
+        }
+      });
+
+      
+      if(!user){
+        return res.status(404).json({
+          sucess:false,
+          message:"Account not found",
+        });
+      }
+      // store in redis 
+      await client.set(cacheKey,JSON.stringify(user),"EX",60*60);
+       // 1 hour expire time to auto delete
+
+      return res.status(200).json({
+        success:true,
+         user
+      });
+      
+      
+    } catch (error) {
+         console.error("User profile error:", error.message);
+
+          return res.status(500).json({
+                success:false,
+                message:"Interval server issuse"
+           });
+        
+    }
+}
 
 export const updateName = async (req, res) => {
   try {
@@ -109,8 +179,8 @@ export const updateProfilePic = async (req,res) => {
         id:userId,
       },
       data:{
-        photoURL,
-        public_id
+        photoURL: photoURL,
+        publicId : public_id
       },
       select:{
           id: true,
@@ -131,7 +201,7 @@ export const updateProfilePic = async (req,res) => {
 
     return res.status(200).json({
       success:true,
-       message:"Profile pic updated successfully."
+       message:"Profile pic updated successfully.",
     });
 
     
