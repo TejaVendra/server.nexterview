@@ -3,21 +3,22 @@ import client from "../redis/redisServer.js";
 import cloudinary from "../cloudinary/cloudinaryServer.js";
 import jwt from 'jsonwebtoken'
 import { generateAccessToken } from "../libs/genToken.js";
+import { adminAuth } from "../authentication/firebaseAdmin.js";
 
-// profile page required API end points 
+//  API end points for user authentication
 export const userProfile = async ( req,res) =>{
     try {
 
-      const { email } = req.params;
+      const  userId  = req.user.id;
 
-      if(!email){
-          return res.status(400).json({
+      if(!userId){
+          return res.status(403).json({
             sucess:false,
-            message:"Email is required."
+            message:"Unauthorized access."
           })
       }
 
-      const cacheKey = `user:${email}`;
+      const cacheKey = `user:${userId}`;
 
       //check the redis wheather the user is present to not --> HIT
 
@@ -35,8 +36,17 @@ export const userProfile = async ( req,res) =>{
 
        const user = await prisma.user.findUnique({
         where:{
-            email,
+            id:userId,
         },
+        select:{
+            id: true,
+            firebaseId: true,
+            email: true,
+            name: true,
+            photoURL: true,
+            isVerified: true,
+            provider: true,
+        }
       });
 
       
@@ -53,14 +63,16 @@ export const userProfile = async ( req,res) =>{
       return res.status(200).json({
         success:true,
          user
-      }) 
+      });
+      
+      
     } catch (error) {
-         console.error("User profile error:", error);
+         console.error("User profile error:", error.message);
 
           return res.status(500).json({
-          success:false,
-          message:"Interval server issuse"
-          })
+                success:false,
+                message:"Interval server issuse"
+           });
         
     }
 }
@@ -86,10 +98,19 @@ export const updateName = async (req, res) => {
       data: {
         name: name.trim(),
       },
+      select:{
+          id: true,
+          firebaseId: true,
+          email: true,
+          name: true,
+          photoURL: true,
+          isVerified: true,
+          provider: true,
+      }
     });
 
-   
-    await client.del(`user:${user.email}`);
+   //update the cache user 
+    await client.set(`user:${userId}`,JSON.stringify(user),"EX",3600);
 
     return res.status(200).json({
       success: true,
@@ -98,7 +119,7 @@ export const updateName = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error in the user controller:", error);
+    console.error("Error in the user controller:", error.message);
 
     return res.status(500).json({
       success: false,
@@ -110,27 +131,32 @@ export const updateName = async (req, res) => {
 export const getSignature = async(req,res) =>{
   try {
 
-    const timestamp = Math.round(new Date().getTime()/1000);
+    const timestamp = Math.round(new Date() / 1000);
 
-   const signature = cloudinary.utils.api_sign_request({
-     timestamp,
-     folder:"profile-pictures"
-   },
-  process.env.CLOUDINARY_API_SECRET);
+    const signature = cloudinary.utils.api_sign_request(
+          {
+            timestamp,
+            folder:"profile-pictures"
+          },
+          process.env.CLOUDINARY_API_SECRET
+      );
 
-  return res.status(200).json({
-    success:true,
-    timestamp,
-    signature,
-    apiKey: process.env.CLOUDINARY_API_KEY,
-   cloudName: process.env.CLOUDINARY_CLOUD_NAME
-  });
+    return res.status(200).json({
+      success:true,
+      timestamp,
+      signature,
+      apiKey: process.env.CLOUDINARY_API_KEY,
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME
+    });
     
   } catch (error) {
 
-    console.error("Error in get signature file :",error);
+    console.error("Error in get signature file :",error.message);
 
-    return res.status(500).json({success:false,message:"Internal server issuse."})
+    return res.status(500).json({
+      success:false,
+      message:"Internal server issuse."
+    });
     
   }
 }
@@ -138,10 +164,10 @@ export const getSignature = async(req,res) =>{
 export const updateProfilePic = async (req,res) => {
   try {
 
-    const { photoUrl , public_id } = req.body;
+    const { photoURL , public_id } = req.body;
     const userId = req.user.id;
 
-    if(!photoUrl || !photoUrl.trim() || !public_id || !public_id.trim()){
+    if(!photoURL || !photoURL.trim() || !public_id || !public_id.trim()){
       return res.status(400).json({
         success:false,
         message:"Profile pic is required."
@@ -156,25 +182,32 @@ export const updateProfilePic = async (req,res) => {
         photoURL,
         public_id
       },
-    })
+      select:{
+          id: true,
+          firebaseId: true,
+          email: true,
+          name: true,
+          photoURL: true,
+          isVerified: true,
+          provider: true,
+      }
+    });
 
-    if(!user){
-      return res.status(400).json({
-        success:false,
-        message:"Account is not found."
-      })
-    }
+    await client.set(`user:${userId}`,
+      JSON.stringify(user),
+      "EX",
+      3600
+     );
 
-    await client.del(`user:${user.email}`);
-
-    return res.status(200).json({success:true,
+    return res.status(200).json({
+      success:true,
        message:"Profile pic updated successfully."
-    })
+    });
 
     
   } catch (error) {
 
-    console.error("Error in update profile pic : ",error);
+    console.error("Error in update profile pic : ",error.message);
     return res.status(500).json({
       success:false,
       message:"Internal Server Issue."
@@ -186,21 +219,23 @@ export const updateProfilePic = async (req,res) => {
 export const deleteUser = async (req, res) => {
   try {
     const userId = req.user.id;
-    const email = req.user.email;
     const firebaseId = req.user.firebaseId;
 
+    //delete the firebase user
+    await adminAuth.auth().deleteUser(firebaseId);
    
+    //delete the database
     await prisma.user.delete({
       where: {
         id: userId,
       },
     });
+ 
+    // delete the cached user
+    await client.del(`user:${userId}`);
 
-    
-    await admin.auth().deleteUser(firebaseId);
-
-   
-    await client.del(`user:${email}`);
+    // delete the cached refreh token
+    await client.del(`refresh:${userId}`);
 
     return res.status(200).json({
       success: true,
@@ -208,7 +243,7 @@ export const deleteUser = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error deleting user:", error);
+    console.error("Error deleting user:", error.message);
 
     return res.status(500).json({
       success: false,
@@ -219,67 +254,74 @@ export const deleteUser = async (req, res) => {
 
 
 export const checkAuth = async(req,res) =>{
-  try {
 
     return res.status(200).json({
       success:true,
       user:req.user,
-    });
-    
-  } catch (error) {
-
-    console.error("Error in check auth",error);
-
-    return res.status(500).json({success:false,message:"Internal server issuse."});
-    
-  }
+    });  
+ 
 }
 
 
 export const getRefreshToken = async(req,res) =>{
         try {
 
-          const { refreshToken } = req.body;
+          const refreshToken = req.cookies.refreshToken;
 
           if(!refreshToken){
-            return res.status(400).json({
+            return res.status(401).json({
               success:false,
-              message:"No token provided."
+              message:"Refresh token required."
             })
           }
 
-          const decoded =  jwt.verify(refreshToken,process.env.JWT_SECRET);
+          const decoded =  jwt.verify(refreshToken,process.env.JWT_SECRET_REFRESH);
+
+          const storedRefreshToken = await client.get(
+              `refresh:${decoded.userId}`
+          );
+
+          if (!storedRefreshToken || storedRefreshToken !== refreshToken) {
+              return res.status(401).json({
+                  success: false,
+                  message: "Invalid refresh token"
+              });
+          }
 
           const user = await prisma.user.findUnique({
             where:{
               id:decoded.userId
+            },
+            select: {
+              id: true
             }
           });
 
           if(!user){
-            return res.status(404).json({
+            return res.status(401).json({
               success:false,
-              message:"Unauthorized access or token invalid"
+              message:"User not found."
             })
           }
 
-          const accessToken =  generateAccessToken(user.id);
+          const accessToken = generateAccessToken(user.id);
           
 
           return res.status(200).json({
             success:true,
-            accessToken
-            
+            accessToken,
           });
           
         } catch (error) {
 
-          console.error("Error in get refresh token: ",error);
+          console.error("Error in get refresh token: ",error.message);
 
-          return res.status(500).json({
-            success:false,
-            message:"Internal server issuse."
-          })
+          return res.status(401).json({
+              success: false,
+              message: "Invalid or expired refresh token."
+          });
           
         }
 }
+
+

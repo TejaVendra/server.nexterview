@@ -4,12 +4,14 @@ import helmet from 'helmet'
 import connectDB from './database/server.js';
 import {prisma} from "./database/db.js";
 import userRouter from './routes/UserRouter.js'
+import cookieParser  from 'cookie-parser'
 import cors from 'cors'
 
 
 const app = express();
 app.use(helmet());
-app.use(express.json())
+app.use(express.json());
+app.use(cookieParser());
 connectDB();
 app.use(cors({
     origin: "http://localhost:5173"
