@@ -17,7 +17,7 @@ export const protectedRoute = async(req,res,next) =>{
         }
 
         //verify the token is wheather it is valid or not
-        const decoded = jwt.verify(token,process.env.JWT_SECRET); 
+        const decoded = jwt.verify(token,process.env.JWT_SECRET_ACCESS); 
 
         const cachedUser = await client.get(`user:${decoded.userId}`);
 
