@@ -6,7 +6,7 @@ import client from '../redis/redisServer.js';
 export const firebaseAuth = async (req, res) => {
   try {
 
-      const { idToken } = req.body; // get the data from client where client sends the data in the body
+      const { idToken } = req.body || {}; // get the data from client where client sends the data in the body
 
       // if the token is not receieved , here 400 means bad request --> bad request from client side >>>>
       if (!idToken) {
@@ -15,6 +15,8 @@ export const firebaseAuth = async (req, res) => {
           message: "ID token is required",
         });
       }
+
+
 
     // Verify token (Decoded payload , that has email, picture, name, etc.)
     const decoded = await adminAuth.verifyIdToken(idToken); 
@@ -46,6 +48,8 @@ export const firebaseAuth = async (req, res) => {
     },
     
     }); 
+
+    console.log("clieck")
 
     // Store the user in Redis cache for faster future access
     // Key  : user:<database_user_id>
@@ -91,6 +95,8 @@ export const firebaseAuth = async (req, res) => {
       user,
       accessToken,
     });
+
+
 
   } catch (error) {
     console.error("Error in Firebase Auth file :", error);

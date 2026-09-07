@@ -222,7 +222,7 @@ export const deleteUser = async (req, res) => {
     const firebaseId = req.user.firebaseId;
 
     //delete the firebase user
-    await adminAuth.auth().deleteUser(firebaseId);
+    await adminAuth.deleteUser(firebaseId);
    
     //delete the database
     await prisma.user.delete({
