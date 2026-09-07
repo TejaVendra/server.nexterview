@@ -288,23 +288,9 @@ export const getRefreshToken = async(req,res) =>{
               });
           }
 
-          const user = await prisma.user.findUnique({
-            where:{
-              id:decoded.userId
-            },
-            select: {
-              id: true
-            }
-          });
+       
 
-          if(!user){
-            return res.status(401).json({
-              success:false,
-              message:"User not found."
-            })
-          }
-
-          const accessToken = generateAccessToken(user.id);
+          const accessToken = generateAccessToken(decoded.userId);
           
 
           return res.status(200).json({
@@ -325,3 +311,16 @@ export const getRefreshToken = async(req,res) =>{
 }
 
 
+
+export const logout = async (req,res) =>{
+  try {
+
+    res.clearCookie("refreshToken");
+    res.status(200).json({success:true,message:"Logged out successfully"})
+    
+  } catch (error) {
+    console.error("Error in log out controller",error.message);
+    res.status(500).json({success:false,message:"Internal server issuse."})
+    
+  }
+}

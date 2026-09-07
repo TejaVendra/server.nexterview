@@ -48,9 +48,8 @@ export const protectedRoute = async(req,res,next) =>{
         await client.set(
             `user:${user.id}`,
             JSON.stringify(user),
-            {
-                EX: 3600
-            }
+            "EX",
+            3600
         );
 
         req.user = user;

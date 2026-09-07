@@ -1,7 +1,7 @@
 import express from 'express'
 import {firebaseAuth}  from '../middleware/firebaseAuth.js';
 import { protectedRoute } from '../middleware/protected.js';
-import { checkAuth, deleteUser, getRefreshToken, getSignature, updateName, updateProfilePic, userProfile } from '../controllers/userController.js';
+import { checkAuth, deleteUser, getRefreshToken, getSignature, logout, updateName, updateProfilePic, userProfile } from '../controllers/userController.js';
 import { verification } from '../middleware/verification.js';
 
 
@@ -16,6 +16,7 @@ router.post('/user/update/profile',protectedRoute,verification,updateProfilePic)
 router.delete('/user/delete',protectedRoute,verification,deleteUser);
 router.get('/check',protectedRoute,verification,checkAuth);
 router.post("/refresh",getRefreshToken);
+router.post("/user/logout",logout)
 
 
 export default router;
