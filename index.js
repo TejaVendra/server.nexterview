@@ -6,9 +6,15 @@ import {prisma} from "./database/db.js";
 import userRouter from './routes/UserRouter.js'
 import cookieParser  from 'cookie-parser'
 import cors from 'cors'
+import http from 'http'
+import { Server } from "socket.io";
 
 
 const app = express();
+
+export const server = http.createServer(app);
+
+
 app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
@@ -25,9 +31,26 @@ app.get('/', async (req, res) => {
 
 app.use('/auth',userRouter);
 
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 3000;
 
-app.listen(PORT,() =>{
+export const io = new Server(server,{
+    cors:{
+        origin: "http://localhost:5173",
+        methods: ["GET", "POST"]
+    }
+})
+
+io.on("connection",(socket) => {
+    console.log("Connected : ",socket.id);
+
+    socket.on("disconnect",() => {
+        console.log("Disconnted:",socket.id);
+    });
+})
+
+
+
+server.listen(PORT,() =>{
     try {
         console.log(`Server is running on --> http://localhost:${PORT}`);
 
