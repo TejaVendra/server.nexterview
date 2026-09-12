@@ -142,6 +142,7 @@ model MockInterview{
     round   String
     experience      String
     duration        Int
+    description  String?
 
     status     InterviewStatus     @default(CREATED)
 
