@@ -6,8 +6,14 @@ import cookieParser  from 'cookie-parser'
 import cors from 'cors'
 import { app } from './libs/server.js';
 import { server } from './libs/server.js';
+import 'dotenv/config'
 
 
+
+app.use(cors({
+    origin: "http://localhost:5173",
+    credentials:true,
+}));
 
 app.use(helmet());
 app.use(express.json());
@@ -16,10 +22,7 @@ connectDB();
 
 
 
-app.use(cors({
-    origin: "http://localhost:5173",
-    credentials:true,
-}));
+
 
 app.get('/health',(req,res) => {
     return res.status(200).json({

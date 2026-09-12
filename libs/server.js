@@ -1,7 +1,7 @@
 import express from 'express'
 import { Server } from 'socket.io';
 import http from 'http'
-
+import { registerInterviewSocket } from '../sockets/interviewSocket.js';
 
 const app = express();
 
@@ -9,11 +9,13 @@ const server = http.createServer(app); // creates the http instance and pass the
 
 const io = new Server(server,{
     cors:{
-        origin:["http://localhost:5173"]
+        origin: "http://localhost:5173",
+        methods: ["GET", "POST"],
+        credentials: true
     },
      maxHttpBufferSize: 1e7,
 })
-
+registerInterviewSocket(io);
 const userSocketMap = {}; // to map the user id to the scocket  { userId : socketId }
 
 
