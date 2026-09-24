@@ -1,131 +1,301 @@
-import { StateGraph,START,END ,interrupt, MemorySaver} from "@langchain/langgraph";
+import {
+    StateGraph,
+    START,
+    END,
+    interrupt,
+    MemorySaver
+} from "@langchain/langgraph";
 
 import { interviewState } from "./interviewState.js";
 import { interviewLLM } from "../llm/model.js";
+import { prisma } from "../database/db.js";
 
+
+// ==========================================
+// 1. Generate Question
+// ==========================================
 
 const generateQuestion = async (state) => {
+
+    console.log(
+        `Generating question for interview ${state.interviewId}`
+    );
+
     const prompt = `
-            You are an AI technical interviewer.
+You are an AI technical interviewer.
 
-            Candidate role: ${state.role}
-            Interview round: ${state.round}
-            Experience: ${state.experience}
+Candidate role:
+${state.role}
 
-            Candidate resume:
-            ${JSON.stringify(state.resume)}
+Interview round:
+${state.round}
 
-            Previous conversation:
-            ${JSON.stringify(state.messages)}
+Candidate experience:
+${state.experience}
 
-            Generate the next interview question.
+Interview context:
+${state.description || "No additional context provided."}
 
-            Rules:
-            - Ask exactly one question.
-            - Do not provide the answer.
-            - Do not repeat previous questions.
-            - Adapt the difficulty to the candidate's experience.
-            - Use the candidate's resume when relevant.
-            `;
+Candidate resume:
+${JSON.stringify(state.resume, null, 2)}
 
-                const response = await interviewLLM.invoke(prompt);
+Previous conversation:
+${JSON.stringify(state.messages, null, 2)}
 
-                const question = response.content;
+Generate the next interview question.
 
-                return {
-                    currentQuestion: question,
+Rules:
 
-                    messages: [
-                        {
-                            role: "assistant",
-                            content: question
-                        }
-                    ]
-                };
-};
+- Ask exactly ONE question.
+- Do not provide the answer.
+- Do not ask multiple questions.
+- Do not repeat previous questions.
+- Adapt the difficulty to the candidate's experience.
+- Use the candidate's resume when relevant.
+- Keep the question relevant to the interview role and round.
+- Return only the interview question.
+`;
 
-const waitForAnswer = async (state) => {
-    const answer = interrupt({
-        type: "WAITING_FOR_ANSWER",
-        question: state.currentQuestion
-    });
+    const response = await interviewLLM.invoke(prompt);
+
+    const question = response.content.trim();
+
+    if (!question) {
+        throw new Error("LLM generated an empty question.");
+    }
+
+    // ==========================================
+    // Find next question order
+    // ==========================================
+
+    const lastQuestion =
+        await prisma.mockQuestion.findFirst({
+            where: {
+                interviewId: state.interviewId
+            },
+            orderBy: {
+                order: "desc"
+            }
+        });
+
+    const nextOrder =
+        lastQuestion
+            ? lastQuestion.order + 1
+            : 1;
+
+    // ==========================================
+    // Save question to database
+    // ==========================================
+
+    const savedQuestion =
+        await prisma.mockQuestion.create({
+            data: {
+                interviewId: state.interviewId,
+                question,
+                order: nextOrder
+            }
+        });
+
+    console.log(
+        `Question ${savedQuestion.id} created`
+    );
+
+    // ==========================================
+    // Update LangGraph state
+    // ==========================================
 
     return {
-        currentAnswer: answer,
+        currentQuestion: question,
+
+        currentQuestionId: savedQuestion.id,
 
         messages: [
             {
-                role: "user",
-                content: answer
+                role: "assistant",
+                content: question
             }
         ]
     };
 };
+
+
+// ==========================================
+// 2. Wait For Candidate Answer
+// ==========================================
+
+const waitForAnswer = async (state) => {
+
+    const answer = interrupt({
+        type: "WAITING_FOR_ANSWER",
+
+        question: state.currentQuestion,
+
+        questionId: state.currentQuestionId
+    });
+
+    if (!answer || !answer.trim()) {
+        throw new Error(
+            "Candidate answer cannot be empty."
+        );
+    }
+
+    const cleanAnswer = answer.trim();
+
+    // ==========================================
+    // Save answer to current question
+    // ==========================================
+
+    await prisma.mockQuestion.update({
+        where: {
+            id: state.currentQuestionId
+        },
+
+        data: {
+            answer: cleanAnswer
+        }
+    });
+
+    console.log(
+        `Answer saved for question ${state.currentQuestionId}`
+    );
+
+    return {
+        currentAnswer: cleanAnswer,
+
+        messages: [
+            {
+                role: "user",
+                content: cleanAnswer
+            }
+        ]
+    };
+};
+
+
+// ==========================================
+// 3. Evaluate Candidate Answer
+// ==========================================
+
 const evaluateAnswer = async (state) => {
 
     const prompt = `
-            You are an expert technical interviewer.
+You are an expert technical interviewer.
 
-            Evaluate the candidate's answer.
+Evaluate the candidate's answer.
 
-            Role:
-            ${state.role}
+Candidate role:
+${state.role}
 
-            Interview round:
-            ${state.round}
+Interview round:
+${state.round}
 
-            Question:
-            ${state.currentQuestion}
+Question:
+${state.currentQuestion}
 
-            Candidate answer:
-            ${state.currentAnswer}
+Candidate answer:
+${state.currentAnswer}
 
-            Evaluate based on:
+Evaluate the answer based on:
 
-            1. Technical correctness
-            2. Depth of understanding
-            3. Relevance
-            4. Communication
+1. Technical correctness
+2. Depth of understanding
+3. Relevance
+4. Communication
 
-            Give concise feedback and a score from 0 to 10.
-            `;
+Return exactly this format:
 
-                const response = await interviewLLM.invoke(prompt);
+Score: <number from 0 to 10>
+Feedback: <concise feedback>
 
-                return {
-                    evaluation: response.content
-                };
-            };
+Do not provide any other format.
+`;
 
-    
-const checkInterviewTime = async (state) => {
+    const response =
+        await interviewLLM.invoke(prompt);
 
-        const startedAt = new Date(state.startedAt);
+    const evaluation =
+        response.content.trim();
 
-        const elapsedTime =
-            Date.now() - startedAt.getTime();
+    // ==========================================
+    // Extract score
+    // ==========================================
 
-        const durationMs =
-            state.duration * 60 * 1000;
+    let score = null;
 
-        const remainingTime =
-            durationMs - elapsedTime;
-
-        console.log(
-            `Interview ${state.interviewId} has ${Math.max(
-                0,
-                Math.floor(remainingTime / 1000)
-            )} seconds remaining`
+    const scoreMatch =
+        evaluation.match(
+            /Score:\s*(\d+(?:\.\d+)?)/i
         );
 
-        if (remainingTime <= 0) {
-            return {
-                status: "COMPLETED"
-            };
-        }
+    if (scoreMatch) {
+        score = Number(scoreMatch[1]);
+    }
 
-        return {};
+    // ==========================================
+    // Save evaluation
+    // ==========================================
+
+    await prisma.mockQuestion.update({
+        where: {
+            id: state.currentQuestionId
+        },
+
+        data: {
+            feedback: evaluation,
+            score
+        }
+    });
+
+    console.log(
+        `Evaluation saved for question ${state.currentQuestionId}`
+    );
+
+    return {
+        evaluation
+    };
 };
+
+
+// ==========================================
+// 4. Check Interview Time
+// ==========================================
+
+const checkInterviewTime = async (state) => {
+
+    const startedAt =
+        new Date(state.startedAt);
+
+    const elapsedTime =
+        Date.now() - startedAt.getTime();
+
+    const durationMs =
+        state.duration * 60 * 1000;
+
+    const remainingTime =
+        durationMs - elapsedTime;
+
+    console.log(
+        `Interview ${state.interviewId}: ` +
+        `${Math.max(
+            0,
+            Math.floor(remainingTime / 1000)
+        )} seconds remaining`
+    );
+
+    if (remainingTime <= 0) {
+
+        return {
+            status: "COMPLETED"
+        };
+    }
+
+    return {};
+};
+
+
+// ==========================================
+// 5. Routing After Time Check
+// ==========================================
 
 const routeAfterTimeCheck = (state) => {
 
@@ -136,58 +306,80 @@ const routeAfterTimeCheck = (state) => {
     return "nextQuestion";
 };
 
-const workflow = new StateGraph(interviewState)
 
-    .addNode(
-        "generateQuestion",
-        generateQuestion
-    )
+// ==========================================
+// Build Graph
+// ==========================================
 
-    .addNode(
-        "waitForAnswer",
-        waitForAnswer
-    )
+const workflow =
+    new StateGraph(interviewState)
 
-    .addNode(
-        "evaluateAnswer",
-        evaluateAnswer
-    )
+        .addNode(
+            "generateQuestion",
+            generateQuestion
+        )
 
-    .addNode(
-        "checkInterviewTime",
-        checkInterviewTime
-    )
+        .addNode(
+            "waitForAnswer",
+            waitForAnswer
+        )
 
-    .addEdge(
-        START,
-        "generateQuestion"
-    )
+        .addNode(
+            "evaluateAnswer",
+            evaluateAnswer
+        )
 
-    .addEdge(
-        "generateQuestion",
-        "waitForAnswer"
-    )
+        .addNode(
+            "checkInterviewTime",
+            checkInterviewTime
+        )
 
-    .addEdge(
-        "waitForAnswer",
-        "evaluateAnswer"
-    )
+        .addEdge(
+            START,
+            "generateQuestion"
+        )
 
-    .addEdge(
-        "evaluateAnswer",
-        "checkInterviewTime"
-    )
+        .addEdge(
+            "generateQuestion",
+            "waitForAnswer"
+        )
 
-    .addConditionalEdges(
-        "checkInterviewTime",
-        routeAfterTimeCheck,
-        {
-            nextQuestion: "generateQuestion",
-            finish: END
-        }
-    );
+        .addEdge(
+            "waitForAnswer",
+            "evaluateAnswer"
+        )
 
-const checkpointer = new MemorySaver();
+        .addEdge(
+            "evaluateAnswer",
+            "checkInterviewTime"
+        )
+
+        .addConditionalEdges(
+            "checkInterviewTime",
+
+            routeAfterTimeCheck,
+
+            {
+                nextQuestion:
+                    "generateQuestion",
+
+                finish:
+                    END
+            }
+        );
+
+
+// ==========================================
+// Checkpointer
+// ==========================================
+
+const checkpointer =
+    new MemorySaver();
+
+
+// ==========================================
+// Compile Graph
+// ==========================================
 
 export const interviewGraph =
     workflow.compile({

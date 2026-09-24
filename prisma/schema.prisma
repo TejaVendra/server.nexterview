@@ -178,4 +178,7 @@ model MockQuestion{
   createdAt       DateTime @default(now())
 
   interview       MockInterview @relation(fields: [interviewId], references: [id],onDelete: Cascade)
+
+  @@unique([interviewId, order])
+  @@index([interviewId, createdAt])
 }

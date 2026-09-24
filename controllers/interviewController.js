@@ -4,7 +4,7 @@ import client from "../redis/redisServer.js";
 export const createMockInterview = async(req,res) =>{
     try {
 
-        const { role , round , experience , duration ,description} = req.body;
+        const { role , round , experience , duration } = req.body;
 
         if (!role || !round || !experience || !duration) {
             return res.status(400).json({
@@ -29,57 +29,24 @@ export const createMockInterview = async(req,res) =>{
 
         const key = `interview:${userId}:count`;
 
-        const count = await client.incr(key);
+        const currentCount = await client.get(key);
 
-        if(count === 1){
-            await client.expire(key,60*60*24);
-        }
-
-        if(count > 3){
+        if (currentCount && Number(currentCount) >= 3) {
             return res.status(429).json({
-                success:false,
-                message:"Your daily limit has been reached. Please try again later."
+                success: false,
+                message: "Your daily limit has been reached. Please try again later."
             });
         }
 
-       const resume = await prisma.resume.findUnique({
-                    where: {
-                        userId
-                    },
-                    select: {
-                        skills: {
-                            select: {
-                                name: true
-                            }
-                        },
+        const count = await client.incr(key);
 
-                        experiences: {
-                            select: {
-                                company: true,
-                                position: true,
-                                location: true,
-                                startDate: true,
-                                endDate: true,
-                                description: true
-                            }
-                        },
+        if (count === 1) {
+            await client.expire(key, 60 * 60 * 24);
+        }
 
-                        projects: {
-                            select: {
-                                name: true,
-                                description: true,
-                                githubUrl: true,
-                                liveUrl: true,
+       
 
-                                technologies: {
-                                    select: {
-                                        name: true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
+     
 
         const interview = await prisma.mockInterview.create({
 
@@ -89,21 +56,12 @@ export const createMockInterview = async(req,res) =>{
                 round,
                 experience,
                 duration : Number(duration),
-                description : description || null,
+            
             }
           
         });
 
-        const contextAi = {
-            interview:{
-                id:interview.id,
-                role: interview.role, round: interview.round, experience: interview.experience, duration: interview.duration, description: interview.description
-            },
-            resume
-        };
-
-        // handle data to llm 
-
+    
 
 
         return res.status(201).json({
@@ -128,3 +86,5 @@ export const createMockInterview = async(req,res) =>{
     }
 
 }
+
+

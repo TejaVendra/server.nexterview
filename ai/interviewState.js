@@ -1,34 +1,80 @@
-import { StateSchema , MessagesValue } from "@langchain/langgraph";
-import * as z from 'zod';
+import { Annotation } from "@langchain/langgraph";
 
-export const interviewState = new StateSchema({
-    interviewId:z.number(),
+export const interviewState = Annotation.Root({
 
-    role:z.string(),
+    // ==========================================
+    // Interview Information
+    // ==========================================
 
-    round: z.string(),
+    interviewId: Annotation(),
 
-    experience: z.string(),
+    role: Annotation(),
 
-    duration: z.number(),
+    round: Annotation(),
 
-    resume: z.any().nullable(),
+    experience: Annotation(),
 
-    currentQuestion: z.string().nullable(),
+    duration: Annotation(),
 
-    currentAnswer: z.string().nullable(),
+    startedAt: Annotation(),
 
-    evaluation: z.any().nullable(),
+    // ==========================================
+    // Candidate Resume
+    // ==========================================
 
-    startedAt: z.string(),
+    resume: Annotation(),
 
-    status: z.enum([
-        "CREATED",
-        "IN_PROGRESS",
-        "COMPLETED",
-        "CANCELLED"
-    ]),
+    // ==========================================
+    // Current Question
+    // ==========================================
 
-    messages: MessagesValue
+    currentQuestion: Annotation({
+        reducer: (_, value) => value,
+        default: () => null
+    }),
 
+    // Database ID of current MockQuestion
+    currentQuestionId: Annotation({
+        reducer: (_, value) => value,
+        default: () => null
+    }),
+
+    // ==========================================
+    // Current Answer
+    // ==========================================
+
+    currentAnswer: Annotation({
+        reducer: (_, value) => value,
+        default: () => null
+    }),
+
+    // ==========================================
+    // Current Evaluation
+    // ==========================================
+
+    evaluation: Annotation({
+        reducer: (_, value) => value,
+        default: () => null
+    }),
+
+    // ==========================================
+    // Interview Status
+    // ==========================================
+
+    status: Annotation({
+        reducer: (_, value) => value,
+        default: () => "IN_PROGRESS"
+    }),
+
+    // ==========================================
+    // Conversation History
+    // ==========================================
+
+    messages: Annotation({
+        reducer: (previous, current) => [
+            ...previous,
+            ...current
+        ],
+        default: () => []
+    })
 });

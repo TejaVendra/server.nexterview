@@ -2,6 +2,7 @@ import express from 'express'
 import helmet from 'helmet'
 import connectDB from './database/server.js';
 import userRouter from './routes/UserRouter.js'
+import interviewRouter from './routes/interviewRouter.js'
 import cookieParser  from 'cookie-parser'
 import cors from 'cors'
 import { app } from './libs/server.js';
@@ -33,6 +34,7 @@ app.get('/health',(req,res) => {
 
 
 app.use('/auth',userRouter);
+app.use('/interview',interviewRouter)
 
 const PORT = process.env.PORT || 3000;
 
