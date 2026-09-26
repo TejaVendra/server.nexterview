@@ -13,40 +13,40 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  firebaseId String @unique
-  email     String   @unique
-  name      String?
-  provider  String
-  photoURL String?
-  publicId String?
+  id         Int     @id @default(autoincrement())
+  firebaseId String  @unique
+  email      String  @unique
+  name       String?
+  provider   String
+  photoURL   String?
+  publicId   String?
   isVerified Boolean @default(false)
 
-  resume Resume?
+  resume         Resume?
   mockInterviews MockInterview[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  resumeAnalysis ResumeAnalysis?
 }
 
-
-model Resume{
-     id Int @id @default(autoincrement())
-     userId Int @unique
-     title String?
+model Resume {
+  id      Int     @id @default(autoincrement())
+  userId  Int     @unique
+  title   String?
      summary String?
 
-     phone String?
-     location String?
-     linkedin String?
-     github String?
+  phone     String?
+  location  String?
+  linkedin  String?
+  github    String?
      portfolio String?
 
-     skills Skill[]
-     experiences Experience[]
-     educations Education[]
-     projects Project[]
+  skills         Skill[]
+  experiences    Experience[]
+  educations     Education[]
+  projects       Project[]
      certifications Certification[]
 
      user User @relation(fields:[userId],references:[id],onDelete:Cascade)
@@ -187,4 +187,34 @@ model MockQuestion{
 
   @@unique([interviewId, order])
   @@index([interviewId, createdAt])
+}
+
+
+
+model ResumeAnalysis {
+  id        String @id @default(cuid())
+
+  userId    Int @unique
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  atsScore      Int
+  overallScore  Int?
+  summary       String?
+
+  pros          Json?
+  cons          Json?
+  suggestions   Json?
+  missingSkills Json?
+  sectionScores Json?
+
+  status AnalysisStatus @default(PROCESSING)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum AnalysisStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
 }

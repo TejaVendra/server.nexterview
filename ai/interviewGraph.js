@@ -359,7 +359,7 @@ const workflow =
 // 7. POSTGRES CHECKPOINTER
 // ==================================================
 
-const DATABASE_URL = process.env.DATABASE_URL;
+const DATABASE_URL = process.env.LANGGRAPH_DATABASE_URL;
 
 if (!DATABASE_URL) {
     throw new Error(
