@@ -2,79 +2,86 @@ import { Annotation } from "@langchain/langgraph";
 
 export const interviewState = Annotation.Root({
 
-    // ==========================================
-    // Interview Information
-    // ==========================================
+    interviewId: Annotation({
+        reducer: (_, value) => value,
+        default: () => null
+    }),
 
-    interviewId: Annotation(),
+    role: Annotation({
+        reducer: (_, value) => value,
+        default: () => ""
+    }),
 
-    role: Annotation(),
+    round: Annotation({
+        reducer: (_, value) => value,
+        default: () => ""
+    }),
 
-    round: Annotation(),
+    experience: Annotation({
+        reducer: (_, value) => value,
+        default: () => ""
+    }),
 
-    experience: Annotation(),
+    description: Annotation({
+        reducer: (_, value) => value,
+        default: () => ""
+    }),
 
-    duration: Annotation(),
+    duration: Annotation({
+        reducer: (_, value) => value,
+        default: () => 0
+    }),
 
-    startedAt: Annotation(),
+    startedAt: Annotation({
+        reducer: (_, value) => value,
+        default: () => null
+    }),
 
-    // ==========================================
-    // Candidate Resume
-    // ==========================================
-
-    resume: Annotation(),
-
-    // ==========================================
-    // Current Question
-    // ==========================================
+    resume: Annotation({
+        reducer: (_, value) => value,
+        default: () => ({})
+    }),
 
     currentQuestion: Annotation({
         reducer: (_, value) => value,
         default: () => null
     }),
 
-    // Database ID of current MockQuestion
     currentQuestionId: Annotation({
         reducer: (_, value) => value,
         default: () => null
     }),
-
-    // ==========================================
-    // Current Answer
-    // ==========================================
 
     currentAnswer: Annotation({
         reducer: (_, value) => value,
         default: () => null
     }),
 
-    // ==========================================
-    // Current Evaluation
-    // ==========================================
-
     evaluation: Annotation({
         reducer: (_, value) => value,
         default: () => null
     }),
-
-    // ==========================================
-    // Interview Status
-    // ==========================================
 
     status: Annotation({
         reducer: (_, value) => value,
         default: () => "IN_PROGRESS"
     }),
 
-    // ==========================================
-    // Conversation History
-    // ==========================================
+    llmError: Annotation({
+        reducer: (_, value) => value,
+        default: () => null
+    }),
+
+    questionCount: Annotation({
+        reducer: (_, value) => value,
+        default: () => 0
+    }),
 
     messages: Annotation({
-        reducer: (previous, current) => [
-            ...previous,
-            ...current
-        ],
+        reducer: (previous, current) => {
+            if (!current) return previous;
+            return [...(previous || []), ...current];
+        },
         default: () => []
     })
 });

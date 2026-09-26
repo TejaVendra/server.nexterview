@@ -1,50 +1,77 @@
-import express from 'express'
-import helmet from 'helmet'
-import connectDB from './database/server.js';
-import userRouter from './routes/UserRouter.js'
-import interviewRouter from './routes/interviewRouter.js'
-import cookieParser  from 'cookie-parser'
-import cors from 'cors'
-import { app } from './libs/server.js';
-import { server } from './libs/server.js';
-import 'dotenv/config'
+import express from "express";
+import helmet from "helmet";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import "dotenv/config";
+
+import connectDB from "./database/server.js";
+import userRouter from "./routes/UserRouter.js";
+import interviewRouter from "./routes/interviewRouter.js";
+
+// ⬇️ Note: io is created AND interview sockets are
+//    registered inside libs/server.js, so we just import.
+import { app, server } from "./libs/server.js";
+
+import { initCheckpointer } from "./ai/interviewGraph.js";
 
 
+// ============================================================
+// MIDDLEWARE
+// ============================================================
 
-app.use(cors({
-    origin: "http://localhost:5173",
-    credentials:true,
-}));
+app.use(
+    cors({
+        origin: "http://localhost:5173",
+        credentials: true,
+    })
+);
 
 app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
-connectDB();
 
 
+// ============================================================
+// ROUTES
+// ============================================================
 
-
-
-app.get('/health',(req,res) => {
+app.get("/health", (req, res) => {
     return res.status(200).json({
-         status:"ok",
-         timestamp: Date.now(),
-    })
-})
+        status: "ok",
+        timestamp: Date.now(),
+    });
+});
+
+app.use("/auth", userRouter);
+app.use("/interview", interviewRouter);
 
 
-app.use('/auth',userRouter);
-app.use('/interview',interviewRouter)
+// ============================================================
+// START SERVER
+// ============================================================
 
 const PORT = process.env.PORT || 3000;
 
-
-
-server.listen(PORT,() =>{
+const startServer = async () => {
     try {
-        console.log(`Server is running on --> http://localhost:${PORT}`);
+        // 1. MongoDB
+        await connectDB();
+
+        // 2. PostgresSaver tables
+        await initCheckpointer();
+
+        // 3. Start listening
+        //    (Socket.IO is already wired inside libs/server.js)
+        server.listen(PORT, () => {
+            console.log(
+                `Server is running on --> http://localhost:${PORT}`
+            );
+        });
 
     } catch (error) {
-        console.error("Error is occurred when try to start thr server")
+        console.error("Failed to start server:", error);
+        process.exit(1);
     }
-})
+};
+
+startServer();

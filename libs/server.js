@@ -1,32 +1,23 @@
-import express from 'express'
-import { Server } from 'socket.io';
-import http from 'http'
-import { registerInterviewSocket } from '../sockets/interviewSocket.js';
+import express from "express";
+import { Server } from "socket.io";
+import http from "http";
+import { registerInterviewSocket } from "../sockets/interviewSocket.js";
 
 const app = express();
+const server = http.createServer(app);
 
-const server = http.createServer(app); // creates the http instance and pass the my express app into  as its request handler
-
-const io = new Server(server,{
-    cors:{
+const io = new Server(server, {
+    cors: {
         origin: "http://localhost:5173",
         methods: ["GET", "POST"],
         credentials: true
     },
-     maxHttpBufferSize: 1e7,
-})
+    maxHttpBufferSize: 1e7,
+});
+
 registerInterviewSocket(io);
-const userSocketMap = {}; // to map the user id to the scocket  { userId : socketId }
 
+// Optional user map for other features
+const userSocketMap = {};
 
-io.on("connection",(socket) => {
-    console.log("connected : ",socket.id);
-
-    socket.on("disconnect",() =>{
-        console.log("disconneted : ",socket.id);
-    })
-})
-
-
-
-export { io, server, app};
+export { io, server, app, userSocketMap };

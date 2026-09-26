@@ -130,6 +130,7 @@ model Certification {
 enum InterviewStatus {
   CREATED
   IN_PROGRESS
+   PAUSED
   COMPLETED
   CANCELLED
 }
@@ -147,7 +148,12 @@ model MockInterview{
     status     InterviewStatus     @default(CREATED)
 
     startedAt       DateTime?
+
+    elapsedSeconds Int @default(0)
+    pausedAt      DateTime?
     completedAt     DateTime?
+
+      totalPausedSeconds Int         @default(0)
 
     score           Float?
     feedback        String?
