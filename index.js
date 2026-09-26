@@ -7,6 +7,7 @@ import "dotenv/config";
 import connectDB from "./database/server.js";
 import userRouter from "./routes/UserRouter.js";
 import interviewRouter from "./routes/interviewRouter.js";
+import resumeAnalysisRouter from "./routes/resumeAnalsisRouter.js";
 
 // ⬇️ Note: io is created AND interview sockets are
 //    registered inside libs/server.js, so we just import.
@@ -44,6 +45,7 @@ app.get("/health", (req, res) => {
 
 app.use("/auth", userRouter);
 app.use("/interview", interviewRouter);
+app.use("/resume",resumeAnalysisRouter);
 
 
 // ============================================================

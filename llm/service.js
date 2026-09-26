@@ -1,62 +1,54 @@
 import { interviewLLM } from "./model.js";
 
 export const analyzeWithLLM = async (resumeText) => {
-  const prompt = `
-        You are an expert resume and ATS analyzer.
+ const prompt = `
+You are an expert resume and ATS analyzer.
 
-        Analyze the following resume and return a detailed, objective analysis.
+Analyze the following resume.
 
-        Your analysis must include:
+Return ONLY a valid JSON object.
 
-        1. ATS score from 0 to 100
-        2. Overall summary
-        3. Pros / strengths
-        4. Cons / weaknesses
-        5. Missing or weak areas
-        6. Specific improvement suggestions
-        7. Section-wise scores
-        8. Important skills identified from the resume
-        9. Potential ATS issues such as:
-        - poor formatting
-        - missing keywords
-        - weak section headings
-        - lack of measurable achievements
-        - unnecessary information
-        - missing contact information
-        10. A concise final recommendation
+DO NOT:
+- use markdown
+- use code fences
+- write \`\`\`json
+- write explanations outside the JSON
+- add any text before or after the JSON
 
-        Return ONLY valid JSON matching this structure:
+The JSON must have exactly this structure:
 
-        {
-        "atsScore": 0,
-        "summary": "",
-        "pros": [],
-        "cons": [],
-        "missingAreas": [],
-        "suggestions": [],
-        "skills": [],
-        "atsIssues": [],
-        "sectionScores": {
-            "contact": 0,
-            "summary": 0,
-            "skills": 0,
-            "experience": 0,
-            "projects": 0,
-            "education": 0
-        },
-        "finalRecommendation": ""
-        }
+{
+  "atsScore": 0,
+  "overallScore": 0,
+  "summary": "",
+  "pros": [],
+  "cons": [],
+  "suggestions": [],
+  "missingSkills": [],
+  "sectionScores": {
+    "contact": 0,
+    "summary": 0,
+    "education": 0,
+    "experience": 0,
+    "skills": 0,
+    "projects": 0,
+    "formatting": 0
+  }
+}
 
-        Rules:
-        - All scores must be between 0 and 100.
-        - Base the analysis only on the resume provided.
-        - Do not invent experience, skills, education, or achievements.
-        - Give specific and actionable feedback.
-        - Return JSON only.
+Rules:
+- atsScore must be between 0 and 100.
+- overallScore must be between 0 and 100.
+- section scores must be between 0 and 100.
+- pros must be an array of strings.
+- cons must be an array of strings.
+- suggestions must be an array of strings.
+- missingSkills must be an array of strings.
+- Do not invent information that is not present in the resume.
 
-        RESUME:
-        ${resumeText}
-        `;
+Resume:
+${resumeText}
+`;
 
   try {
     const response = await interviewLLM.invoke(prompt);
