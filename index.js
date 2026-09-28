@@ -8,17 +8,16 @@ import connectDB from "./database/server.js";
 import userRouter from "./routes/UserRouter.js";
 import interviewRouter from "./routes/interviewRouter.js";
 import resumeAnalysisRouter from "./routes/resumeAnalsisRouter.js";
+import portfolioAnalyzerRouter from './routes/portfolioAnalyzerRouter.js'
 
-// ⬇️ Note: io is created AND interview sockets are
-//    registered inside libs/server.js, so we just import.
+import {initBrowser} from './services/scraper.js'
+
 import { app, server } from "./libs/server.js";
 
 import { initCheckpointer } from "./ai/interviewGraph.js";
 
 
-// ============================================================
-// MIDDLEWARE
-// ============================================================
+
 
 app.use(
     cors({
@@ -32,9 +31,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 
-// ============================================================
-// ROUTES
-// ============================================================
+
 
 app.get("/health", (req, res) => {
     return res.status(200).json({
@@ -46,11 +43,10 @@ app.get("/health", (req, res) => {
 app.use("/auth", userRouter);
 app.use("/interview", interviewRouter);
 app.use("/resume",resumeAnalysisRouter);
+app.use("/portfolio",portfolioAnalyzerRouter);
 
 
-// ============================================================
-// START SERVER
-// ============================================================
+
 
 const PORT = process.env.PORT || 3000;
 
@@ -62,8 +58,10 @@ const startServer = async () => {
         // 2. PostgresSaver tables
         await initCheckpointer();
 
-        // 3. Start listening
-        //    (Socket.IO is already wired inside libs/server.js)
+        // cromium broswe for scaping
+        await initBrowser();
+
+
         server.listen(PORT, () => {
             console.log(
                 `Server is running on --> http://localhost:${PORT}`

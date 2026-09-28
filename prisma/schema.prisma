@@ -29,6 +29,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   resumeAnalysis ResumeAnalysis?
+  portfolioAnalysis PortfolioAnalysis?
 }
 
 model Resume {
@@ -217,4 +218,32 @@ enum AnalysisStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+model PortfolioAnalysis{
+  id   Int @id @default(autoincrement())
+  userId Int @unique
+  user User @relation(fields:[userId],references:[id],onDelete: Cascade)
+
+  overallScore Int
+
+   projectScore       Int
+  technicalScore     Int
+  experienceScore    Int
+  presentationScore  Int
+  impactScore        Int
+  documentationScore Int
+  careerRelevanceScore Int
+
+  summary      String
+  strengths    Json
+  weaknesses   Json
+  suggestions  Json
+
+  missingSkills    Json
+  recommendedSkills Json
+
+   status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
