@@ -1,73 +1,11 @@
-import { interviewGraph } from "./ai/interviewGraph.js";
-import { Command } from "@langchain/langgraph";
-
-const config = {
-    configurable: {
-        thread_id: "interview:1"
-    }
-};
-
-const initialState = {
-    interviewId: 1,
-    role: "Backend Developer",
-    round: "Technical",
-    experience: "Fresher",
-    duration: 30,
-
-    resume: {
-        skills: [
-            { name: "JavaScript" },
-            { name: "Node.js" },
-            { name: "Redis" }
-        ],
-        projects: [
-            {
-                name: "AI Mock Interview",
-                description: "AI powered mock interview system"
-            }
-        ],
-        experiences: []
-    },
-
-    currentQuestion: null,
-    currentAnswer: null,
-    evaluation: null,
-
-    startedAt: new Date().toISOString(),
-
-    status: "IN_PROGRESS",
-
-    messages: []
-};
+import { interviewLLM } from "./llm/model.js";
 
 
-// Start interview
-const result = await interviewGraph.invoke(
-    initialState,
-    config
-);
+async function sample(){
 
-console.dir(result, { depth: null });
+    console.log("started....")
+      const response = await interviewLLM.invoke("tell me about when you are feeling something different about you ");
+      console.log(response);
+}
 
-
-// Candidate answer
-const answer = `
-The Node.js event loop allows Node.js to perform non-blocking
-I/O operations. JavaScript runs on a single thread, but Node.js
-uses the event loop and underlying system APIs to handle
-asynchronous operations such as file operations and network
-requests. Once an asynchronous operation completes, its
-callback is placed into the appropriate queue and the event
-loop processes it when the call stack is available.
-`;
-
-
-// Resume interview
-const result2 = await interviewGraph.invoke(
-    new Command({
-        resume: answer
-    }),
-    config
-);
-
-console.dir(result2, { depth: null });
+sample();

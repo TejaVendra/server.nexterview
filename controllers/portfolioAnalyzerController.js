@@ -19,6 +19,10 @@ export const analyzePortfolio = async (req, res) => {
 
         url = url.trim();
 
+        console.log('====================================');
+        console.log("analzye hits...");
+        console.log('====================================');
+
      
         if (!/^https?:\/\//i.test(url)) {
             url = `https://${url}`;

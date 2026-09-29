@@ -205,7 +205,12 @@ export const analyzePortfolioWithLLM = async (text) => {
       `;
 
       try {
+        console.log('====================================');
+        console.log("come to llm  ");
+        console.log('====================================');
         const response = await interviewLLM.invoke(prompt);
+
+        console.log("llms gives the response:",response)
 
         const content = response.content;
 
