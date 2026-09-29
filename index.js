@@ -9,6 +9,7 @@ import userRouter from "./routes/UserRouter.js";
 import interviewRouter from "./routes/interviewRouter.js";
 import resumeAnalysisRouter from "./routes/resumeAnalsisRouter.js";
 import portfolioAnalyzerRouter from './routes/portfolioAnalyzerRouter.js'
+import resumeMatchRouter from './routes/resumeMatchRouter.js'
 
 import {initBrowser} from './services/scraper.js'
 
@@ -44,6 +45,7 @@ app.use("/auth", userRouter);
 app.use("/interview", interviewRouter);
 app.use("/resume",resumeAnalysisRouter);
 app.use("/portfolio",portfolioAnalyzerRouter);
+app.use("/resume-match",resumeMatchRouter);
 
 
 
