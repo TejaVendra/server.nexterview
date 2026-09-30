@@ -32,11 +32,21 @@ model User {
   portfolioAnalysis PortfolioAnalysis?
   resumeMatchAnalysis ResumeMatchAnalysis?
 }
+enum ResumeTemplate {
+  TEMPLATE_ONE
+  TEMPLATE_TWO
+  TEMPLATE_THREE
+  TEMPLATE_FOUR
+}
 
 model Resume {
   id      Int     @id @default(autoincrement())
   userId  Int     @unique
   title   String?
+
+  template ResumeTemplate @default(TEMPLATE_ONE)
+
+
      summary String?
 
   phone     String?
