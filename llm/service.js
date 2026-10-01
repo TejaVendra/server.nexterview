@@ -482,3 +482,136 @@ export const analyzeJobMatchWithLLM = async(resumeText,description) =>{
              throw new Error("Failed to analyze resume match");
         }
 }
+
+
+
+export const givesTheBetterContext = async (data, type) => {
+  let instruction = "";
+
+  switch (type) {
+    case "headline":
+      instruction = `
+Improve this professional headline.
+
+Rules:
+- Return only one line.
+- Keep it concise and professional.
+- Highlight relevant education, role, technologies, or specialization.
+- Use "|" to separate different highlights.
+- Do not invent skills, experience, or qualifications.
+`;
+      break;
+
+    case "summary":
+      instruction = `
+Improve this professional summary.
+
+Rules:
+- Return only the improved summary.
+- Write 2-4 concise sentences.
+- Make it professional and recruiter-friendly.
+- Highlight relevant skills, experience, education, and career focus.
+- Avoid unnecessary buzzwords.
+- Do not invent information.
+`;
+      break;
+
+    case "experience":
+      instruction = `
+Improve this work experience description.
+
+Rules:
+- Return only the improved description.
+- Use concise, professional bullet points.
+- Focus on responsibilities, technical contributions, and achievements.
+- Use strong action verbs.
+- Quantify impact only when the provided information supports it.
+- Do not invent achievements, metrics, technologies, or responsibilities.
+`;
+      break;
+
+    case "education":
+      instruction = `
+Improve this education description.
+
+Rules:
+- Return only the improved education content.
+- Keep it concise and professional.
+- Clearly present the degree, field of study, institution, and relevant details.
+- Do not invent grades, achievements, coursework, or awards.
+`;
+      break;
+
+    case "project":
+      instruction = `
+Improve this project description.
+
+Rules:
+- Return only the improved project description.
+- Clearly explain what was built and its purpose.
+- Mention technologies only if provided.
+- Highlight important technical contributions.
+- Keep it concise and resume-friendly.
+- Do not invent features or technologies.
+`;
+      break;
+
+    case "certification":
+      instruction = `
+Improve this certification description.
+
+Rules:
+- Return only the improved certification content.
+- Keep it concise and professional.
+- Preserve the certification name, issuer, and relevant details.
+- Do not invent certifications or credentials.
+`;
+      break;
+
+    case "skills":
+      instruction = `
+Improve and organize this skills section.
+
+Rules:
+- Return only the improved skills.
+- Keep the existing skills.
+- Remove unnecessary repetition.
+- Organize related technologies logically.
+- Do not add skills that were not provided.
+`;
+      break;
+
+    default:
+      instruction = `
+Improve the provided resume content.
+
+Rules:
+- Return only the improved content.
+- Keep it concise and professional.
+- Preserve the original meaning.
+- Do not invent information.
+`;
+  }
+
+  const prompt = `
+You are a professional resume writing assistant.
+
+${instruction}
+
+Original content:
+${data}
+`;
+
+  try {
+    const response = await interviewLLM.invoke(prompt);
+
+    return response.content.trim();
+  } catch (error) {
+    console.error(
+      "Error generating better context:",
+      error
+    );
+
+    throw error;
+  }
+};

@@ -1,6 +1,7 @@
 import express from "express";
 
 import {
+  getBetterContext,
   getResumeMakerDetails,
   saveResumeMaker,
 } from "../controllers/resumeMakerController.js";
@@ -34,6 +35,8 @@ router.put(
   protectedRoute,
   saveResumeMaker
 );
+
+router.post("/context",protectedRoute,getBetterContext);
 
 
 export default router;

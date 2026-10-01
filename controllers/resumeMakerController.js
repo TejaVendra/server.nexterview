@@ -1,11 +1,7 @@
 
 import { prisma } from "../database/db.js";
+import { givesTheBetterContext } from "../llm/service.js";
 
-/*
-|--------------------------------------------------------------------------
-| Constants
-|--------------------------------------------------------------------------
-*/
 
 const validTemplates = [
   "modern",
@@ -14,11 +10,7 @@ const validTemplates = [
   "professional",
 ];
 
-/*
-|--------------------------------------------------------------------------
-| Helpers
-|--------------------------------------------------------------------------
-*/
+
 
 const cleanString = (value) => {
   if (value === undefined || value === null) {
@@ -50,13 +42,6 @@ const parseDate = (value) => {
   return date;
 };
 
-/*
-|--------------------------------------------------------------------------
-| GET /api/resume-maker
-|
-| Get complete resume of logged-in user
-|--------------------------------------------------------------------------
-*/
 
 export const getResumeMakerDetails = async (req, res) => {
   try {
@@ -121,13 +106,6 @@ export const getResumeMakerDetails = async (req, res) => {
   }
 };
 
-/*
-|--------------------------------------------------------------------------
-| PUT /api/resume-maker
-|
-| Save complete resume state atomically
-|--------------------------------------------------------------------------
-*/
 
 export const saveResumeMaker = async (req, res) => {
   try {
@@ -699,6 +677,49 @@ export const saveResumeMaker = async (req, res) => {
 
     return res.status(500).json({
       message: "Failed to save resume",
+    });
+  }
+};
+
+
+
+
+export const getBetterContext = async (req, res) => {
+  try {
+    const { text, type } = req.body;
+
+    if (
+      !text ||
+      typeof text !== "string" ||
+      !text.trim()
+    ) {
+      return res.status(400).json({
+        message: "text is required.",
+      });
+    }
+
+    if (!type) {
+      return res.status(400).json({
+        message: "type is required.",
+      });
+    }
+
+    const generatedText = await givesTheBetterContext(
+      text,
+      type
+    );
+
+    return res.status(200).json({
+      generatedText,
+    });
+  } catch (error) {
+    console.error(
+      "Error in getBetterContext controller:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Failed to generate better context",
     });
   }
 };
