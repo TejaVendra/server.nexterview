@@ -1,9 +1,7 @@
 import { prisma } from "../database/db.js";
 import client from "../redis/redisServer.js";
 
-// ======================================================
-// CREATE INTERVIEW
-// ======================================================
+
 
 export const createMockInterview = async (req, res) => {
     try {
@@ -16,9 +14,6 @@ export const createMockInterview = async (req, res) => {
             description
         } = req.body;
 
-        // ------------------------------------------
-        // Validate input
-        // ------------------------------------------
 
         if (!role || !round || !experience || !duration) {
             return res.status(400).json({
@@ -148,9 +143,7 @@ export const createMockInterview = async (req, res) => {
 };
 
 
-// ======================================================
-// GET INTERVIEW
-// ======================================================
+
 
 export const getMockInterview = async (req, res) => {
 
@@ -373,9 +366,6 @@ export const getMockInterview = async (req, res) => {
 };
 
 
-// ======================================================
-// START INTERVIEW
-// ======================================================
 
 export const startMockInterview = async (req, res) => {
 
@@ -580,4 +570,95 @@ export const startMockInterview = async (req, res) => {
                 "Failed to start interview."
         });
     }
+};
+
+
+export const mockInterviews = async (req, res) => {
+  try {
+    console.log("GET MOCK INTERVIEWS");
+    console.log("USER:", req.user);
+
+    const interviews = await prisma.mockInterview.findMany({
+      where: {
+        userId: req.user.id,
+      },
+      select: {
+        id: true, role: true, round: true, experience: true, duration: true, score: true, status: true, createdAt: true, updatedAt: true,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    console.log("INTERVIEWS:", interviews);
+
+    return res.status(200).json({
+      interviews,
+    });
+
+  } catch (error) {
+    console.error(
+      "Error in get users mock interviews controller:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Failed to get the mock interviews",
+    });
+  }
+};
+
+
+export const getMockInterviewResult = async (req, res) => {
+  try {
+    const interviewId = Number(req.params.id);
+
+    if (!Number.isInteger(interviewId)) {
+      return res.status(400).json({
+        message: "Invalid interview ID",
+      });
+    }
+
+    const interview = await prisma.mockInterview.findFirst({
+      where: {
+        id: interviewId,
+        userId: req.user.id,
+      },
+      include: {
+        questions: {
+          orderBy: {
+            order: "asc",
+          },
+          select: {
+            id: true,
+            question: true,
+            answer: true,
+            feedback: true,
+            score: true,
+            order: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    if (!interview) {
+      return res.status(404).json({
+        message: "Interview not found",
+      });
+    }
+
+    return res.status(200).json({
+      interview,
+    });
+  } catch (error) {
+    console.error(
+      "Error getting mock interview result:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Failed to get interview result",
+    });
+  }
 };
