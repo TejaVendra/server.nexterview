@@ -33,9 +33,7 @@ const withGraphLock = async (interviewId, fn) => {
     graphLocks.set(key, promise);
     return promise;
 };
-// ============================================================
-// GET REMAINING TIME
-// ============================================================
+
 
 const getRemainingSeconds = (interview) => {
 
@@ -53,10 +51,6 @@ const getRemainingSeconds = (interview) => {
 };
 
 
-// ============================================================
-// CALCULATE CURRENT ELAPSED TIME
-// ============================================================
-
 const getCurrentElapsedSeconds = (interview) => {
 
     let elapsedSeconds = Number(interview.elapsedSeconds || 0);
@@ -71,10 +65,6 @@ const getCurrentElapsedSeconds = (interview) => {
     return elapsedSeconds;
 };
 
-
-// ============================================================
-// GET RESUME
-// ============================================================
 
 const getCandidateResume = async (userId) => {
     const resume = await prisma.resume.findUnique({
@@ -91,10 +81,6 @@ const getCandidateResume = async (userId) => {
 };
 
 
-// ============================================================
-// GET ALL QUESTIONS
-// ============================================================
-
 const getInterviewQuestions = async (interviewId) => {
     return prisma.mockQuestion.findMany({
         where: { interviewId },
@@ -103,10 +89,6 @@ const getInterviewQuestions = async (interviewId) => {
 };
 
 
-// ============================================================
-// GET CURRENT UNANSWERED QUESTION
-// ============================================================
-
 const getCurrentQuestion = async (interviewId) => {
     return prisma.mockQuestion.findFirst({
         where: { interviewId, answer: null },
@@ -114,10 +96,6 @@ const getCurrentQuestion = async (interviewId) => {
     });
 };
 
-
-// ============================================================
-// COMPLETE INTERVIEW
-// ============================================================
 
 const completeInterview = async (interviewId) => {
 
@@ -155,11 +133,6 @@ const completeInterview = async (interviewId) => {
     });
 };
 
-
-// ============================================================
-// PAUSE INTERVIEW
-// ============================================================
-
 const pauseInterview = async (interviewId) => {
 
     const interview = await prisma.mockInterview.findUnique({
@@ -183,10 +156,6 @@ const pauseInterview = async (interviewId) => {
     });
 };
 
-
-// ============================================================
-// RESUME INTERVIEW
-// ============================================================
 
 const resumeInterview = async (interviewId) => {
 
@@ -216,10 +185,6 @@ const resumeInterview = async (interviewId) => {
     });
 };
 
-
-// ============================================================
-// RUN GRAPH & EMIT NEXT QUESTION OR END
-// ============================================================
 
 const runGraphAndEmit = async (socket, interview, input, config) => {
 
@@ -291,19 +256,11 @@ const runGraphAndEmit = async (socket, interview, input, config) => {
     });
 };
 
-// ============================================================
-// SOCKET REGISTRATION
-// ============================================================
-
 export const registerInterviewSocket = (io) => {
 
     io.on("connection", (socket) => {
 
         console.log("Client connected:", socket.id);
-
-        // ====================================================
-        // JOIN / RESTORE INTERVIEW
-        // ====================================================
 
         socket.on("join-interview", async ({ interviewId }) => {
 
@@ -331,9 +288,7 @@ export const registerInterviewSocket = (io) => {
                     return;
                 }
 
-                // ----------------------------
-                // COMPLETED
-                // ----------------------------
+    
 
                 if (interview.status === "COMPLETED") {
                     const questions = await getInterviewQuestions(id);
@@ -344,9 +299,7 @@ export const registerInterviewSocket = (io) => {
                     return;
                 }
 
-                // ----------------------------
-                // CANCELLED
-                // ----------------------------
+    
 
                 if (interview.status === "CANCELLED") {
                     socket.emit("interview-error", {
@@ -356,9 +309,6 @@ export const registerInterviewSocket = (io) => {
                     return;
                 }
 
-                // ----------------------------
-                // PAUSED -> RESUME
-                // ----------------------------
 
                 if (interview.status === "PAUSED") {
 
@@ -381,9 +331,7 @@ export const registerInterviewSocket = (io) => {
                     }
                 }
 
-                // ----------------------------
-                // TIME CHECK
-                // ----------------------------
+          
 
                 const remainingSeconds = getRemainingSeconds(interview);
 
@@ -396,9 +344,7 @@ export const registerInterviewSocket = (io) => {
                     return;
                 }
 
-                // ----------------------------
-                // Fetch data
-                // ----------------------------
+           
 
                 const questions = await getInterviewQuestions(id);
                 const currentQuestion = await getCurrentQuestion(id);
@@ -414,11 +360,6 @@ export const registerInterviewSocket = (io) => {
                 });
 
                 console.log("Interview restored:", id);
-
-                // ==================================================
-                // FIX: If there is no pending question, auto-start
-                // the graph so the first question is generated.
-                // ==================================================
 
                 if (!currentQuestion) {
 
@@ -500,10 +441,6 @@ export const registerInterviewSocket = (io) => {
             }
         });
 
-        // ====================================================
-        // START BRAND NEW INTERVIEW
-        // ====================================================
-
         socket.on("start-interview", async ({ interviewId }) => {
 
             try {
@@ -571,9 +508,7 @@ export const registerInterviewSocket = (io) => {
                     return;
                 }
 
-                // ----------------------------
-                // Start timer
-                // ----------------------------
+
 
                 const startedAt = new Date();
 
@@ -649,9 +584,6 @@ export const registerInterviewSocket = (io) => {
             }
         });
 
-        // ====================================================
-        // SUBMIT ANSWER
-        // ====================================================
 
         socket.on("submit-answer", async ({ interviewId, answer }) => {
 
@@ -726,10 +658,6 @@ export const registerInterviewSocket = (io) => {
             }
         });
 
-        // ====================================================
-        // TIME EXPIRED (from client)
-        // ====================================================
-
         socket.on("time-expired", async ({ interviewId }) => {
 
             try {
@@ -753,10 +681,6 @@ export const registerInterviewSocket = (io) => {
                 console.error("Time expired error:", error);
             }
         });
-
-        // ====================================================
-        // RETRY INTERVIEW (after LLM error)
-        // ====================================================
 
         socket.on("retry-interview", async ({ interviewId }) => {
 
@@ -825,10 +749,6 @@ export const registerInterviewSocket = (io) => {
             }
         });
 
-        // ====================================================
-        // EXIT / PAUSE INTERVIEW
-        // ====================================================
-
         socket.on("exit-interview", async ({ interviewId }) => {
 
             try {
@@ -859,10 +779,6 @@ export const registerInterviewSocket = (io) => {
                 console.error("Exit interview error:", error);
             }
         });
-
-        // ====================================================
-        // DISCONNECT
-        // ====================================================
 
         socket.on("disconnect", async (reason) => {
 

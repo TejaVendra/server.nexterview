@@ -662,3 +662,43 @@ export const getMockInterviewResult = async (req, res) => {
     });
   }
 };
+
+
+
+export const getAssemblyTempToken = async(req,res) =>{
+     try {
+        const response = await fetch(
+             process.env.ASSEMBLYAI_TOKEN_END_POINT,
+            {
+                headers: {
+                    authorization:
+                        process.env.ASSEMBLYAI_API_KEY,
+                },
+            }
+        );
+
+        if (!response.ok) {
+            return res.status(
+                response.status
+            ).json({
+                message:
+                    "Failed to create AssemblyAI token",
+            });
+        }
+
+        const data =
+            await response.json();
+
+        res.json({
+            token: data.token,
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message:
+                "AssemblyAI token generation failed",
+        });
+    }
+} 
