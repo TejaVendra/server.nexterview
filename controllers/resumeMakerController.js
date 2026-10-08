@@ -3,13 +3,6 @@ import { prisma } from "../database/db.js";
 import { givesTheBetterContext } from "../llm/service.js";
 
 
-const validTemplates = [
-  "modern",
-  "classic",
-  "minimal",
-  "professional",
-];
-
 
 
 const cleanString = (value) => {

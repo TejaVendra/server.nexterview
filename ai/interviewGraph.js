@@ -13,19 +13,12 @@ import { interviewLLM } from "../llm/model.js";
 import { prisma } from "../database/db.js";
 
 
-// ==================================================
-// 1. GENERATE QUESTION
-// ==================================================
-
 const generateQuestion = async (state) => {
 
     console.log(
         `Generating question for interview ${state.interviewId}`
     );
 
-    // --------------------------------------------------
-    // Fetch previous questions to build the prompt
-    // --------------------------------------------------
 
     const previousQuestions =
         await prisma.mockQuestion.findMany({
@@ -83,13 +76,6 @@ Rules:
         throw new Error("LLM generated an empty question.");
     }
 
-    // --------------------------------------------------
-    // Atomically compute `order` and insert the question.
-    //
-    // Wrapped in a transaction so that two concurrent
-    // invocations cannot both pick the same order.
-    // Retries on P2002 (unique constraint violation).
-    // --------------------------------------------------
 
     const MAX_RETRIES = 5;
     let savedQuestion = null;
@@ -162,9 +148,6 @@ Rules:
 };
 
 
-// ==================================================
-// 2. WAIT FOR ANSWER
-// ==================================================
 
 const waitForAnswer = async (state) => {
 
@@ -195,9 +178,6 @@ const waitForAnswer = async (state) => {
 };
 
 
-// ==================================================
-// 3. EVALUATE ANSWER
-// ==================================================
 
 const evaluateAnswer = async (state) => {
 
@@ -244,9 +224,7 @@ Do not return anything else.
         throw new Error("LLM generated empty evaluation.");
     }
 
-    // --------------------------------------------------
-    // Parse score + feedback
-    // --------------------------------------------------
+
 
     const scoreMatch = evaluation.match(/Score:\s*([\d.]+)/i);
     const feedbackMatch = evaluation.match(/Feedback:\s*([\s\S]+)/i);
@@ -259,9 +237,7 @@ Do not return anything else.
         ? feedbackMatch[1].trim()
         : evaluation;
 
-    // --------------------------------------------------
-    // Persist answer + evaluation
-    // --------------------------------------------------
+   
 
     if (state.currentQuestionId) {
 
@@ -288,9 +264,6 @@ Do not return anything else.
 };
 
 
-// ==================================================
-// 4. CHECK TIME
-// ==================================================
 
 const checkInterviewTime = async (state) => {
 
@@ -316,9 +289,6 @@ const checkInterviewTime = async (state) => {
 };
 
 
-// ==================================================
-// 5. ROUTER
-// ==================================================
 
 const routeAfterTimeCheck = (state) => {
     if (state.status === "COMPLETED") {
@@ -327,10 +297,6 @@ const routeAfterTimeCheck = (state) => {
     return "nextQuestion";
 };
 
-
-// ==================================================
-// 6. GRAPH
-// ==================================================
 
 const workflow =
     new StateGraph(interviewState)
@@ -355,9 +321,6 @@ const workflow =
         );
 
 
-// ==================================================
-// 7. POSTGRES CHECKPOINTER
-// ==================================================
 
 const DATABASE_URL = process.env.LANGGRAPH_DATABASE_URL;
 
@@ -376,8 +339,6 @@ const checkpointer = new PostgresSaver(pool, undefined, {
     schema: "public" // default schema
 });
 
-// setup() creates the checkpoint tables.
-// Only needs to be called once per database.
 let checkpointerReady = false;
 
 export const initCheckpointer = async () => {
@@ -389,9 +350,6 @@ export const initCheckpointer = async () => {
 };
 
 
-// ==================================================
-// 8. EXPORT GRAPH
-// ==================================================
 
 export const interviewGraph =
     workflow.compile({ checkpointer });

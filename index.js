@@ -11,6 +11,7 @@ import resumeAnalysisRouter from "./routes/resumeAnalsisRouter.js";
 import portfolioAnalyzerRouter from './routes/portfolioAnalyzerRouter.js'
 import resumeMatchRouter from './routes/resumeMatchRouter.js'
 import resumeMakerRouter from './routes/resumeMakerRoutes.js'
+import dashboardRouter from './routes/dashboardRouter.js'
 
 import {initBrowser} from './services/scraper.js'
 
@@ -23,7 +24,7 @@ import { initCheckpointer } from "./ai/interviewGraph.js";
 
 app.use(
     cors({
-        origin: "http://localhost:5173",
+        origin: process.env.FRONTEND_URL,
         credentials: true,
     })
 );
@@ -47,7 +48,8 @@ app.use("/interview", interviewRouter);
 app.use("/resume",resumeAnalysisRouter);
 app.use("/portfolio",portfolioAnalyzerRouter);
 app.use("/resume-match",resumeMatchRouter);
-app.use("/resume-maker",resumeMakerRouter)
+app.use("/resume-maker",resumeMakerRouter);
+app.use("/dashboard",dashboardRouter);
 
 
 

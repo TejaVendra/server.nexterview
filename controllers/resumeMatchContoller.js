@@ -12,9 +12,6 @@ export const analyzeResumeMatch = async (req, res) => {
             });
         }
 
-        // ==========================================
-        // CHECK JOB DESCRIPTION
-        // ==========================================
 
         const { description } = req.body;
 
@@ -24,9 +21,7 @@ export const analyzeResumeMatch = async (req, res) => {
             });
         }
 
-        // ==========================================
-        // PARSE PDF
-        // ==========================================
+
 
         const parser = new PDFParse({
             data: req.file.buffer,
@@ -44,9 +39,6 @@ export const analyzeResumeMatch = async (req, res) => {
             });
         }
 
-        // ==========================================
-        // ANALYZE WITH LLM
-        // ==========================================
 
         console.log("Starting resume match analysis...");
 
@@ -57,9 +49,7 @@ export const analyzeResumeMatch = async (req, res) => {
 
         console.log("Resume analysis completed.");
 
-        // ==========================================
-        // VALIDATE VERDICT
-        // ==========================================
+
 
         const verdictExplanation =
             analysis.verdict?.explanation || "";
@@ -79,9 +69,6 @@ export const analyzeResumeMatch = async (req, res) => {
             });
         }
 
-        // ==========================================
-        // SAVE ANALYSIS
-        // ==========================================
 
        const analysisResult = await prisma.resumeMatchAnalysis.upsert({
     where: {
@@ -135,9 +122,7 @@ export const analyzeResumeMatch = async (req, res) => {
     },
 });
 
-        // ==========================================
-        // RESPONSE
-        // ==========================================
+
 
         return res.status(200).json({
             message: "Resume match analyzed successfully",

@@ -749,36 +749,50 @@ export const registerInterviewSocket = (io) => {
             }
         });
 
-        socket.on("exit-interview", async ({ interviewId }) => {
+       socket.on("exit-interview", async ({ interviewId }) => {
+                try {
+                    const id = Number(interviewId);
 
-            try {
+                    if (!Number.isInteger(id)) {
+                        socket.emit("interview-error", {
+                            code: "INTERVIEW_NOT_FOUND",
+                            message: "Interview not found."
+                        });
+                        return;
+                    }
 
-                const id = Number(interviewId);
+                    const interview = await prisma.mockInterview.findUnique({
+                        where: { id }
+                    });
 
-                const interview = await prisma.mockInterview.findUnique({
-                    where: { id }
-                });
+                    if (!interview) return;
+                    if (interview.status === "COMPLETED") return;
 
-                if (!interview) return;
-                if (interview.status !== "IN_PROGRESS") return;
+                    const completed = await completeInterview(id);
 
-                const pausedInterview = await pauseInterview(id);
+                    if (!completed) {
+                        socket.emit("interview-error", {
+                            code: "EXIT_ERROR",
+                            message: "Unable to end the interview."
+                        });
+                        return;
+                    }
 
-                socket.emit("interview-paused", {
-                    interviewId: id,
-                    remainingSeconds: pausedInterview
-                        ? Math.max(
-                            0,
-                            pausedInterview.duration * 60 -
-                                pausedInterview.elapsedSeconds
-                        )
-                        : 0
-                });
+        
+                    io.to(`interview:${id}`).emit("interview-ended", {
+                        interviewId: id,
+                        reason: "EXITED"
+                    });
 
-            } catch (error) {
-                console.error("Exit interview error:", error);
-            }
-        });
+                    console.log(`Interview ${id} completed by user exit.`);
+                } catch (error) {
+                    console.error("Exit interview error:", error);
+                    socket.emit("interview-error", {
+                        code: "EXIT_ERROR",
+                        message: "Unable to end the interview."
+                    });
+                }
+            });
 
         socket.on("disconnect", async (reason) => {
 
