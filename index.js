@@ -60,7 +60,7 @@ const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
     try {
-        // 1. MongoDB
+        
         await connectDB();
 
         // 2. PostgresSaver tables
@@ -70,11 +70,9 @@ const startServer = async () => {
         await initBrowser();
 
 
-        server.listen(PORT, () => {
-            console.log(
-                `Server is running on --> http://localhost:${PORT}`
-            );
-        });
+        server.listen(PORT, "0.0.0.0", () => {
+                console.log(`Server is running on port ${PORT}`);
+            });
 
     } catch (error) {
         console.error("Failed to start server:", error);
