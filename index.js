@@ -12,6 +12,7 @@ import portfolioAnalyzerRouter from './routes/portfolioAnalyzerRouter.js'
 import resumeMatchRouter from './routes/resumeMatchRouter.js'
 import resumeMakerRouter from './routes/resumeMakerRoutes.js'
 import dashboardRouter from './routes/dashboardRouter.js'
+import contactRouter from './routes/contactRouter.js'
 
 import {initBrowser} from './services/scraper.js'
 
@@ -50,6 +51,7 @@ app.use("/portfolio",portfolioAnalyzerRouter);
 app.use("/resume-match",resumeMatchRouter);
 app.use("/resume-maker",resumeMakerRouter);
 app.use("/dashboard",dashboardRouter);
+app.use("/contact",contactRouter);
 
 
 
