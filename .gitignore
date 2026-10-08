@@ -95,8 +95,5 @@ ehthumbs.db
 *.swp
 /generated/prisma
 
-/generated/prisma
-
-/generated/prisma
 
 config/firebase_admin_secret_key.json
