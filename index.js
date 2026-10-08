@@ -61,18 +61,21 @@ const PORT = process.env.PORT || 3000;
 const startServer = async () => {
     try {
         
+        console.log("Connecting database...");
         await connectDB();
 
-        // 2. PostgresSaver tables
+        console.log("Initializing PostgresSaver...");
         await initCheckpointer();
 
-        // cromium broswe for scaping
+        console.log("Initializing Playwright...");
         await initBrowser();
 
+        console.log("Starting HTTP server...");
 
         server.listen(PORT, "0.0.0.0", () => {
-                console.log(`Server is running on port ${PORT}`);
-            });
+            console.log(`Server is running on port ${PORT}`);
+        });
+
 
     } catch (error) {
         console.error("Failed to start server:", error);
